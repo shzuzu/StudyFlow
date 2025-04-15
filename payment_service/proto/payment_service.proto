@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package payment.v1;
 
+option go_package = "payment_service/proto";
+
 import "google/protobuf/timestamp.proto";
 
 service PaymentService {
@@ -56,4 +58,3 @@ message Receipt {
 message ReceiptFileURL {
   string url = 1; // временная ссылка на файл из file-service
 }
-
