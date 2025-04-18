@@ -12,14 +12,6 @@ import (
 	"time"
 )
 
-type IPaymentRepo interface {
-	CreateReceipt(ctx context.Context, receipt *models.PaymentReceiptCreateInput) (*models.PaymentReceipt, error)
-	GetReceiptByID(ctx context.Context, id uuid.UUID) (*models.PaymentReceipt, error)
-	UpdateReceipt(ctx context.Context, id uuid.UUID, isVerified bool) error
-	ExistsByID(ctx context.Context, id uuid.UUID) (bool, error)
-	GetReceiptByLessonID(ctx context.Context, lessonID uuid.UUID) (*models.PaymentReceipt, error)
-}
-
 type PaymentRepo struct {
 	db *pgxpool.Pool
 }
@@ -62,6 +54,7 @@ func (r *PaymentRepo) GetReceiptByID(ctx context.Context, id uuid.UUID) (*models
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, errors1.ErrReceiptNotFound
 		}
+		return nil, handleError(err)
 	}
 
 	return pr, nil
@@ -80,14 +73,22 @@ func (r *PaymentRepo) UpdateReceipt(ctx context.Context, receipt *models.Payment
 		now,
 		receipt.ID,
 	)
-
-	return err
+	if err != nil {
+		return handleError(err)
+	}
+	return nil
 }
 
 func (r *PaymentRepo) ExistsByID(ctx context.Context, id uuid.UUID) (bool, error) {
-	flag := true
-	//TODO: доделать метод
-	return flag, nil
+	query := `
+		SELECT EXISTS (SELECT 1 FROM receipts WHERE id = $1)
+	`
+	var exists bool
+	err := r.db.QueryRow(ctx, query, id).Scan(&exists)
+	if err != nil {
+		return false, handleError(err)
+	}
+	return exists, nil
 }
 
 func (r *PaymentRepo) GetReceiptByLessonID(ctx context.Context, lessonID uuid.UUID) (*models.PaymentReceipt, error) {
@@ -96,10 +97,12 @@ func (r *PaymentRepo) GetReceiptByLessonID(ctx context.Context, lessonID uuid.UU
 	`
 
 	pr := &models.PaymentReceipt{}
-	_, err := r.db.Exec(ctx, query, lessonID)
+	err := pgxscan.Get(ctx, r.db, pr, query, lessonID)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors1.ErrReceiptNotFound
+		}
+		return nil, handleError(err)
 	}
-
 	return pr, nil
 }
