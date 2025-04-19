@@ -15,7 +15,7 @@ type IPaymentRepo interface {
 
 	GetReceiptByID(ctx context.Context, id uuid.UUID) (*models.PaymentReceipt, error)
 
-	UpdateReceipt(ctx context.Context, id uuid.UUID, isVerified bool) error
+	UpdateReceipt(ctx context.Context, id uuid.UUID, isVerified bool) (*models.PaymentReceipt, error)
 
 	ExistsByID(ctx context.Context, id uuid.UUID) (bool, error)
 
@@ -96,13 +96,33 @@ func (s *PaymentService) GetPaymentInfo(ctx context.Context, input *models.GetPa
 	return paymentInfo, nil
 }
 func (s *PaymentService) GetReceipt(ctx context.Context, input *models.GetReceiptInput) (*models.PaymentReceipt, error) {
-
+	receipt, err := s.repo.GetReceiptByID(ctx, input.ReceiptId)
+	if err != nil {
+		return nil, err
+	}
+	return receipt, nil
 }
 
 func (s *PaymentService) VerifyReceipt(ctx context.Context, input *models.VerifyReceipt) (*models.PaymentReceipt, error) {
-
+	receipt, err := s.repo.UpdateReceipt(ctx, input.ReceiptId, true)
+	if err != nil {
+		return nil, err
+	}
+	return receipt, nil
 }
 
 func (s *PaymentService) GetReceiptFile(ctx context.Context, input *models.GetReceiptFileInput) (*models.ReceiptFileUrl, error) {
-
+	receipt, err := s.repo.GetReceiptByID(ctx, input.ReceiptId)
+	if err != nil {
+		return nil, err
+	}
+	generateDownloadURLRequest := &api2.GenerateDownloadURLRequest{FileId: receipt.FileID.String()}
+	url, err := s.fileClient.GenerateDownloadURL(ctx, generateDownloadURLRequest)
+	if err != nil {
+		return nil, err
+	}
+	receiptFileURL := &models.ReceiptFileUrl{
+		URL: url.GetUrl(),
+	}
+	return receiptFileURL, nil
 }

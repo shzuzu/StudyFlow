@@ -124,7 +124,7 @@ func (h *PaymentServiceServer) GetReceiptFile(ctx context.Context, req *pb.GetRe
 		ReceiptId: receiptID,
 	}
 	if logger, ok := logging.GetFromContext(ctx); ok {
-		logger.Info(ctx, "verifying receipt", zap.Any("input", input))
+		logger.Info(ctx, "getting receipt", zap.Any("input", input))
 	}
 	receiptFileURL, err := h.service.GetReceiptFile(ctx, input)
 	if err != nil {
