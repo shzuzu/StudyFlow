@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"payment_service/internal/errors"
+	errors1 "paymentservice/internal/errors"
 )
 
 func isUniqueViolation(err error) bool {

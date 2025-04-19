@@ -1,53 +1,30 @@
 package config
 
 import (
-	"flag"
+	"errors"
 	"github.com/ilyakaznacheev/cleanenv"
 	"os"
-	"time"
 )
 
 type Config struct {
-	Env         string        `yaml:"env" env-default:"local"`
-	StoragePath string        `yaml:"storage_path" env-required:"true"`
-	TokenTTL    time.Duration `yaml:"token_ttl" env-required:"true"`
-	GPRC        GRPCConfig    `yaml:"grpc"`
+	GRPCPort            int    `env:"GRPC_PORT" env-default:"50051"`
+	PostgresURL         string `env:"POSTGRES_URL" env-default:"postgres://postgres:postgres@localhost:5432/postgres"`
+	PostgresMaxConn     int32  `env:"POSTGRES_MAX_CONN" env-default:"5"`
+	PostgresMinConn     int32  `env:"POSTGRES_MIN_CONN" env-default:"1"`
+	PostgresAutoMigrate bool   `env:"POSTGRES_AUTO_MIGRATE" env-default:"true"`
+	TelegramSecret      string `env:"TELEGRAM_SECRET" env-default:"no-secret"`
 }
 
-type GRPCConfig struct {
-	Port    int           `yaml:"port"`
-	Timeout time.Duration `yaml:"timeout"`
-}
-
-func MustLoad() *Config {
-	path := fetchConfigPath()
-	if path == "" {
-		panic("config path is empty")
-	}
-
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		panic("config path does not exist: " + path)
-	}
-
+func New() (*Config, error) {
 	var cfg Config
-
-	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
-		panic("failed to read config: " + err.Error())
+	if err := cleanenv.ReadConfig("./config/.env", &cfg); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			if err := cleanenv.ReadEnv(&cfg); err != nil {
+				return nil, err
+			}
+			return &cfg, nil
+		}
+		return nil, err
 	}
-
-	return &cfg
-}
-
-func fetchConfigPath() string {
-	var res string
-
-	// --config="path/to/config.yaml"
-	flag.StringVar(&res, "config", "", "path file for config")
-	flag.Parse()
-
-	if res == "" {
-		res = os.Getenv("CONFIG_PATH")
-	}
-
-	return res
+	return &cfg, nil
 }

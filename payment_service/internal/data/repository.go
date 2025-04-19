@@ -7,8 +7,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	errors1 "payment_service/internal/errors"
-	"payment_service/internal/models"
+	errdefs "paymentservice/internal/errors"
+	"paymentservice/internal/models"
 	"time"
 )
 
@@ -52,7 +52,7 @@ func (r *PaymentRepo) GetReceiptByID(ctx context.Context, id uuid.UUID) (*models
 	err := pgxscan.Get(ctx, r.db, pr, query, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors1.ErrReceiptNotFound
+			return nil, errdefs.ErrNotFound
 		}
 		return nil, handleError(err)
 	}
@@ -100,7 +100,7 @@ func (r *PaymentRepo) GetReceiptByLessonID(ctx context.Context, lessonID uuid.UU
 	err := pgxscan.Get(ctx, r.db, pr, query, lessonID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors1.ErrReceiptNotFound
+			return nil, errdefs.ErrNotFound
 		}
 		return nil, handleError(err)
 	}

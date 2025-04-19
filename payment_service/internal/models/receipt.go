@@ -25,3 +25,7 @@ type PaymentReceiptUpdateInput struct {
 	ID         uuid.UUID
 	IsVerified bool
 }
+
+type ReceiptFileUrl struct {
+	URL string
+}
