@@ -60,23 +60,28 @@ func (r *PaymentRepo) GetReceiptByID(ctx context.Context, id uuid.UUID) (*models
 	return pr, nil
 }
 
-func (r *PaymentRepo) UpdateReceipt(ctx context.Context, receipt *models.PaymentReceiptUpdateInput) error {
+func (r *PaymentRepo) UpdateReceipt(ctx context.Context, id uuid.UUID, isVerified bool) (*models.PaymentReceipt, error) {
 	query := `
 		UPDATE receipts 
 		SET is_verified = $1, edited_at = $2 
 		WHERE id = $3
 	`
+
 	now := time.Now()
 
 	_, err := r.db.Exec(ctx, query,
-		receipt.IsVerified,
+		isVerified,
 		now,
-		receipt.ID,
+		id,
 	)
 	if err != nil {
-		return handleError(err)
+		return nil, handleError(err)
 	}
-	return nil
+	receipt, err := r.GetReceiptByID(ctx, id)
+	if err != nil {
+		return nil, handleError(err)
+	}
+	return receipt, nil
 }
 
 func (r *PaymentRepo) ExistsByID(ctx context.Context, id uuid.UUID) (bool, error) {

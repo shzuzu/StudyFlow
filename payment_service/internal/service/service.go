@@ -35,6 +35,7 @@ func NewPaymentService(
 	fileClient api2.FileServiceClient,
 	scheduleClient api3.ScheduleServiceClient,
 ) *PaymentService {
+
 	return &PaymentService{
 		repo:           repo,
 		userClient:     userClient,

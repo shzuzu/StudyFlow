@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	errors1 "paymentservice/internal/errors"
+	"paymentservice/internal/errors"
 )
 
 func isUniqueViolation(err error) bool {
@@ -19,10 +19,10 @@ func isNotFound(err error) bool {
 
 func handleError(err error) error {
 	if isUniqueViolation(err) {
-		return errors1.ErrAlreadyExists
+		return errdefs.ErrAlreadyExists
 	}
 	if isNotFound(err) {
-		return errors1.ErrReceiptNotFound
+		return errdefs.ErrNotFound
 	}
 	return fmt.Errorf("repository error: %w", err)
 }

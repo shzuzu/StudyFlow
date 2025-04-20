@@ -8,6 +8,7 @@ require (
 	github.com/georgysavva/scany/v2 v2.1.4
 	github.com/golang-migrate/migrate/v4 v4.18.2
 	github.com/google/uuid v1.6.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jackc/pgx/v5 v5.7.4
 	go.uber.org/zap v1.27.0
