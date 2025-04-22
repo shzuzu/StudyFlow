@@ -6,11 +6,18 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	errdefs "paymentservice/internal/errors"
 	"paymentservice/internal/models"
 	"time"
 )
+
+type DB interface {
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Get(ctx context.Context, sql string, args ...any)
+}
 
 type PaymentRepo struct {
 	db *pgxpool.Pool
@@ -33,7 +40,7 @@ func (r *PaymentRepo) CreateReceipt(ctx context.Context, receipt *models.Payment
 		receipt.ID,
 		receipt.LessonID,
 		receipt.FileID,
-		false,
+		receipt.IsVerified,
 		now,
 		now,
 	)

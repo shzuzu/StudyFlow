@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
 	"net"
 	"os"
 	"os/signal"
@@ -71,9 +72,14 @@ func main() {
 		}
 	}(conn)
 
-	userClient := api.NewUserServiceClient(conn)
-	fileClient := api2.NewFileServiceClient(conn)
-	scheduleClient := api3.NewScheduleServiceClient(conn)
+	userConn, err := grpc.NewClient("user-service:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	fileConn, err := grpc.NewClient("file-service:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	scheduleConn, err := grpc.NewClient("schedule-service:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	userClient := api.NewUserServiceClient(userConn)
+	fileClient := api2.NewFileServiceClient(fileConn)
+	scheduleClient := api3.NewScheduleServiceClient(scheduleConn)
+
 	paymentService := service.NewPaymentService(paymentRepo, userClient, fileClient, scheduleClient)
 
 	paymentHandler := handler.NewPaymentServiceServer(paymentService)
@@ -89,7 +95,7 @@ func main() {
 			logging.NewUnaryLoggingInterceptor(logger),
 		)),
 	)
-
+	reflection.Register(server)
 	pb.RegisterPaymentServiceServer(server, paymentHandler)
 
 	logger.Info(ctx, "Starting gRPC server...", zap.Int("port", cfg.GRPCPort))

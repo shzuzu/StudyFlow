@@ -16,9 +16,10 @@ type PaymentReceipt struct {
 }
 
 type PaymentReceiptCreateInput struct {
-	ID       uuid.UUID
-	LessonID uuid.UUID
-	FileID   uuid.UUID
+	ID         uuid.UUID
+	LessonID   uuid.UUID
+	FileID     uuid.UUID
+	IsVerified bool
 }
 
 type PaymentReceiptUpdateInput struct {
