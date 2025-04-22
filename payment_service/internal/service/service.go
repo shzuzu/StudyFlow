@@ -5,7 +5,12 @@ package service
 import (
 	"context"
 	api2 "fileservice/pkg/api"
+	"fmt"
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"log"
+	"math"
 	"paymentservice/internal/clients"
 	errdefs "paymentservice/internal/errors"
 	"paymentservice/internal/models"
@@ -13,8 +18,8 @@ import (
 	"time"
 )
 
-const maxRetries = 5                      // Максимальное количество попыток
-const retryDelay = 500 * time.Millisecond // Задержка между попытками
+const maxRetries = 6                      // Максимальное количество попыток
+const retryDelay = 100 * time.Millisecond // Задержка между попытками
 
 type IPaymentRepo interface {
 	CreateReceipt(ctx context.Context, receipt *models.PaymentReceiptCreateInput) (*models.PaymentReceipt, error)
@@ -59,7 +64,9 @@ func (s *PaymentService) SubmitPaymentReceipt(ctx context.Context, input *models
 		Id: input.LessonId.String(),
 	}
 
-	lesson, err := s.scheduleClient.GetLesson(ctx, getLessonRequest)
+	lesson, err := retry[*api3.Lesson](ctx, maxRetries, retryDelay, func() (*api3.Lesson, error) {
+		return s.scheduleClient.GetLesson(ctx, getLessonRequest)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +82,9 @@ func (s *PaymentService) SubmitPaymentReceipt(ctx context.Context, input *models
 		PriceRub:       lesson.PriceRub,
 		PaymentInfo:    lesson.PaymentInfo,
 	}
-	lesson, err = s.scheduleClient.UpdateLesson(ctx, updateLessonRequest)
+	lesson, err = retry[*api3.Lesson](ctx, maxRetries, retryDelay, func() (*api3.Lesson, error) {
+		return s.scheduleClient.UpdateLesson(ctx, updateLessonRequest)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +102,9 @@ func (s *PaymentService) SubmitPaymentReceipt(ctx context.Context, input *models
 		FileID:     input.FileId,
 		IsVerified: true,
 	}
-	receipt, err := s.repo.CreateReceipt(ctx, createReceiptInput)
+	receipt, err := retry(ctx, maxRetries, retryDelay, func() (*models.PaymentReceipt, error) {
+		return s.repo.CreateReceipt(ctx, createReceiptInput)
+	})
 	if err != nil {
 		return nil, errdefs.ErrNotFound
 	}
@@ -112,7 +123,7 @@ func (s *PaymentService) GetPaymentInfo(ctx context.Context, input *models.GetPa
 		Id: input.LessonId.String(),
 	}
 
-	lesson, err := retry[*api3.Lesson](maxRetries, retryDelay, func() (*api3.Lesson, error) {
+	lesson, err := retry(ctx, maxRetries, retryDelay, func() (*api3.Lesson, error) {
 		return s.scheduleClient.GetLesson(ctx, getLessonRequest)
 	})
 	if err != nil {
@@ -133,7 +144,7 @@ func (s *PaymentService) GetReceipt(ctx context.Context, input *models.GetReceip
 		return nil, errdefs.ErrInvalidArgument
 	}
 
-	receipt, err := retry[*models.PaymentReceipt](maxRetries, retryDelay, func() (*models.PaymentReceipt, error) {
+	receipt, err := retry[*models.PaymentReceipt](ctx, maxRetries, retryDelay, func() (*models.PaymentReceipt, error) {
 		return s.repo.GetReceiptByID(ctx, input.ReceiptId)
 	})
 	if err != nil {
@@ -146,7 +157,7 @@ func (s *PaymentService) VerifyReceipt(ctx context.Context, input *models.Verify
 	if input.ReceiptId == uuid.Nil {
 		return nil, errdefs.ErrInvalidArgument
 	}
-	receipt, err := retry[*models.PaymentReceipt](maxRetries, retryDelay, func() (*models.PaymentReceipt, error) {
+	receipt, err := retry(ctx, maxRetries, retryDelay, func() (*models.PaymentReceipt, error) {
 		return s.repo.UpdateReceipt(ctx, input.ReceiptId, true)
 	})
 	if err != nil {
@@ -159,7 +170,7 @@ func (s *PaymentService) GetReceiptFile(ctx context.Context, input *models.GetRe
 	if input.ReceiptId == uuid.Nil {
 		return nil, errdefs.ErrInvalidArgument
 	}
-	receipt, err := retry[*models.PaymentReceipt](maxRetries, retryDelay, func() (*models.PaymentReceipt, error) {
+	receipt, err := retry[*models.PaymentReceipt](ctx, maxRetries, retryDelay, func() (*models.PaymentReceipt, error) {
 		return s.repo.GetReceiptByID(ctx, input.ReceiptId)
 	})
 	if err != nil {
@@ -176,17 +187,42 @@ func (s *PaymentService) GetReceiptFile(ctx context.Context, input *models.GetRe
 	return receiptFileURL, nil
 }
 
-func retry[T any](attempts int, delay time.Duration, fn func() (T, error)) (T, error) {
+func retry[T any](
+	ctx context.Context,
+	attempts int,
+	baseDelay time.Duration,
+	fn func() (T, error),
+) (T, error) {
 	var zero T
 	var err error
-	var result T
 
 	for i := 0; i < attempts; i++ {
-		result, err = fn()
-		if err == nil {
-			return result, nil
+		select {
+		case <-ctx.Done():
+			return zero, ctx.Err()
+		default:
+			result, fnErr := fn()
+			if fnErr == nil {
+				return result, nil
+			}
+			err = fnErr
+
+			if !isRetriable(fnErr) {
+				return zero, fnErr
+			}
+
+			delay := time.Duration(math.Pow(2, float64(i))) * baseDelay
+			log.Printf("Retrying after error: %v (attempt %d)", fnErr, i+1)
+			time.Sleep(delay)
 		}
-		time.Sleep(delay)
 	}
-	return zero, err
+	return zero, fmt.Errorf("after %d attempts: %w", attempts, err)
+}
+
+func isRetriable(err error) bool {
+	if s, ok := status.FromError(err); ok {
+		return s.Code() == codes.NotFound || s.Code() == codes.PermissionDenied ||
+			s.Code() == codes.Unavailable || s.Code() == codes.InvalidArgument || s.Code() == codes.Internal
+	}
+	return false
 }

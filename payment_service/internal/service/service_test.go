@@ -5,7 +5,10 @@ import (
 	"errors"
 	api2 "fileservice/pkg/api"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	errdefs "paymentservice/internal/errors"
 	"paymentservice/internal/mocks"
 	"paymentservice/internal/models"
@@ -155,30 +158,34 @@ func TestSubmitPaymentReceipt(t *testing.T) {
 		}
 	})
 	t.Run("RetryLogic_SucceedsAfterRetries", func(t *testing.T) {
-		ctrl, svc, mockRepo, _, _, _ := setup(t)
+		ctrl, svc, mockRepo, _, _, mockScheduleClient := setup(t)
 		defer ctrl.Finish()
 
-		// Мокаем ошибку, что ID уже существует
-		mockRepo.EXPECT().CreateReceipt(gomock.Any(), gomock.Any()).Return(nil, errdefs.ErrAlreadyExists).Times(5)
+		lessonID := uuid.New()
+		fileID := uuid.New()
 
-		// После 5 попыток, проверяем успешный вызов CreateReceipt
-		mockRepo.EXPECT().CreateReceipt(gomock.Any(), gomock.Any()).Return(&models.PaymentReceipt{}, nil).Times(1)
+		mockScheduleClient.EXPECT().GetLesson(gomock.Any(), gomock.Any()).
+			Return(&api.Lesson{Id: lessonID.String(), IsPaid: false}, nil)
+		mockScheduleClient.EXPECT().UpdateLesson(gomock.Any(), gomock.Any()).
+			Return(&api.Lesson{}, nil)
 
-		// Вызов сервиса
+		mockRepo.EXPECT().ExistsByID(gomock.Any(), gomock.Any()).
+			Return(false, nil)
+
+		retriableError := status.Error(codes.Unavailable, "service down")
+		mockRepo.EXPECT().CreateReceipt(gomock.Any(), gomock.Any()).
+			Return(nil, retriableError).Times(4)
+		mockRepo.EXPECT().CreateReceipt(gomock.Any(), gomock.Any()).
+			Return(&models.PaymentReceipt{}, nil).Times(1)
+
 		_, err := svc.SubmitPaymentReceipt(context.Background(), &models.SubmitPaymentReceiptInput{
-			LessonId: uuid.New(),
-			FileId:   uuid.New(),
+			LessonId: lessonID,
+			FileId:   fileID,
 		})
-		if err != nil {
-			t.Fatalf("expected success after retries, got %v", err)
-		}
+
+		assert.NoError(t, err)
 	})
 
-	// Дополнительные тесты:
-	// - Ошибка при получении урока
-	// - Ошибка при обновлении урока
-	// - Ошибка при проверке существования ID
-	// - Ошибка при создании квитанции
 }
 
 func TestGetPaymentInfo(t *testing.T) {

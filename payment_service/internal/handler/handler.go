@@ -31,35 +31,37 @@ type PaymentServiceServer struct {
 func NewPaymentServiceServer(paymentService PaymentService) *PaymentServiceServer {
 	return &PaymentServiceServer{service: paymentService}
 }
-
-func (h *PaymentServiceServer) GetPaymentInfo(ctx context.Context, req *pb.GetPaymentInfoRequest) (*pb.PaymentInfo, error) {
-
+func (s *PaymentServiceServer) GetPaymentInfo(ctx context.Context, req *pb.GetPaymentInfoRequest) (*pb.PaymentInfo, error) {
 	lessonID, err := uuid.Parse(req.LessonId)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "invalid LessonId: %v", err)
 	}
 
 	input := &models.GetPaymentInfoInput{LessonId: lessonID}
-	if logger, ok := logging.GetFromContext(ctx); ok {
-		logger.Info(ctx, "getting payment info", zap.Any("input", input))
-	}
-
-	paymentInfo, err := h.service.GetPaymentInfo(ctx, input)
+	paymentInfo, err := s.service.GetPaymentInfo(ctx, input)
 	if err != nil {
-		return nil, mapError(err, errdefs.ErrNotFound, errdefs.ErrPermissionDenied)
+		if errors.Is(err, errdefs.ErrNotFound) {
+			return nil, status.Errorf(codes.NotFound, "payment info not found: %v", err)
+		}
+		return nil, status.Errorf(codes.Internal, "internal server error: %v", err)
 	}
 
-	return toPbPaymentInfo(paymentInfo), nil
+	return &pb.PaymentInfo{
+		LessonId:    paymentInfo.LessonID.String(),
+		PriceRub:    paymentInfo.PriceRUB,
+		PaymentInfo: paymentInfo.PaymentDetails,
+	}, nil
+
 }
 
 func (h *PaymentServiceServer) SubmitPaymentReceipt(ctx context.Context, req *pb.SubmitPaymentReceiptRequest) (*pb.Receipt, error) {
 	lessonID, err := uuid.Parse(req.LessonId)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.New(codes.InvalidArgument, "invalid lesson ID: "+err.Error()).Err()
 	}
 	fileID, err := uuid.Parse(req.LessonId)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.New(codes.InvalidArgument, "invalid file ID: "+err.Error()).Err()
 	}
 
 	input := &models.SubmitPaymentReceiptInput{
@@ -79,7 +81,7 @@ func (h *PaymentServiceServer) SubmitPaymentReceipt(ctx context.Context, req *pb
 func (h *PaymentServiceServer) GetReceipt(ctx context.Context, req *pb.GetReceiptRequest) (*pb.Receipt, error) {
 	receiptID, err := uuid.Parse(req.ReceiptId)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.New(codes.InvalidArgument, "invalid receipt ID: "+err.Error()).Err()
 	}
 
 	input := &models.GetReceiptInput{
@@ -98,7 +100,7 @@ func (h *PaymentServiceServer) GetReceipt(ctx context.Context, req *pb.GetReceip
 func (h *PaymentServiceServer) VerifyReceipt(ctx context.Context, req *pb.VerifyReceiptRequest) (*pb.Receipt, error) {
 	receiptID, err := uuid.Parse(req.ReceiptId)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.New(codes.InvalidArgument, "invalid receipt ID: "+err.Error()).Err()
 	}
 
 	input := &models.VerifyReceipt{
@@ -117,14 +119,14 @@ func (h *PaymentServiceServer) VerifyReceipt(ctx context.Context, req *pb.Verify
 func (h *PaymentServiceServer) GetReceiptFile(ctx context.Context, req *pb.GetReceiptFileRequest) (*pb.ReceiptFileURL, error) {
 	receiptID, err := uuid.Parse(req.ReceiptId)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.New(codes.InvalidArgument, "invalid receipt ID: "+err.Error()).Err()
 	}
 
 	input := &models.GetReceiptFileInput{
 		ReceiptId: receiptID,
 	}
 	if logger, ok := logging.GetFromContext(ctx); ok {
-		logger.Info(ctx, "getting receipt", zap.Any("input", input))
+		logger.Info(ctx, "getting receipt file", zap.Any("input", input))
 	}
 	receiptFileURL, err := h.service.GetReceiptFile(ctx, input)
 	if err != nil {
@@ -165,18 +167,18 @@ func mapError(err error, possibleErrors ...error) error {
 		return nil
 
 	case errors.Is(err, errdefs.ErrNotFound) && slices.Contains(possibleErrors, errdefs.ErrNotFound):
-		return status.Errorf(codes.NotFound, err.Error())
+		return status.New(codes.NotFound, "resource not found").Err()
 
 	case errors.Is(err, errdefs.ErrPermissionDenied) && slices.Contains(possibleErrors, errdefs.ErrPermissionDenied):
-		return status.Errorf(codes.PermissionDenied, err.Error())
+		return status.New(codes.PermissionDenied, "permission denied").Err()
 
 	case errors.Is(err, errdefs.ErrInvalidPayment) && slices.Contains(possibleErrors, errdefs.ErrInvalidPayment):
-		return status.Errorf(codes.Unauthenticated, err.Error())
+		return status.New(codes.Unauthenticated, "invalid payment").Err()
 
 	case errors.Is(err, errdefs.ErrInvalidArgument) && slices.Contains(possibleErrors, errdefs.ErrInvalidArgument):
-		return status.Errorf(codes.InvalidArgument, err.Error())
+		return status.New(codes.InvalidArgument, "invalid argument provided").Err()
 
 	default:
-		return status.Errorf(codes.Internal, err.Error())
+		return status.New(codes.Internal, "internal server error").Err()
 	}
 }
