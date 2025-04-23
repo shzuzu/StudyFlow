@@ -129,13 +129,13 @@ func (s *PaymentService) GetPaymentInfo(ctx context.Context, input *models.GetPa
 	if err != nil {
 		return nil, err
 	}
-	if lesson.PriceRub == 0 {
-		lesson.PriceRub = 0
+	if *lesson.PriceRub == 0 {
+		*lesson.PriceRub = 0
 	}
 	paymentInfo := &models.PaymentInfo{
 		LessonID:       input.LessonId,
-		PriceRUB:       lesson.PriceRub,
-		PaymentDetails: lesson.PaymentInfo,
+		PriceRUB:       *lesson.PriceRub,
+		PaymentDetails: *lesson.PaymentInfo,
 	}
 	return paymentInfo, nil
 }
@@ -153,7 +153,7 @@ func (s *PaymentService) GetReceipt(ctx context.Context, input *models.GetReceip
 	return receipt, nil
 }
 
-func (s *PaymentService) VerifyReceipt(ctx context.Context, input *models.VerifyReceipt) (*models.PaymentReceipt, error) {
+func (s *PaymentService) VerifyReceipt(ctx context.Context, input *models.VerifyReceiptInput) (*models.PaymentReceipt, error) {
 	if input.ReceiptId == uuid.Nil {
 		return nil, errdefs.ErrInvalidArgument
 	}

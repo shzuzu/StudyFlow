@@ -9,6 +9,7 @@ import (
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	errdefs "paymentservice/internal/errors"
 	"paymentservice/internal/mocks"
 	"paymentservice/internal/models"
@@ -38,24 +39,22 @@ func TestSubmitPaymentReceipt(t *testing.T) {
 		fileID := uuid.New()
 		receiptID := uuid.New()
 
-		// Настройка моков
 		mockScheduleClient.EXPECT().GetLesson(gomock.Any(), &api.GetLessonRequest{
 			Id: lessonID.String(),
 		}).Return(&api.Lesson{
 			Id:             lessonID.String(),
-			ConnectionLink: "nigger",
-			PriceRub:       100,
-			PaymentInfo:    "some info",
+			ConnectionLink: proto.String("nigger"),    // вместо &variable
+			PriceRub:       proto.Int32(100),          // вместо &priceRub
+			PaymentInfo:    proto.String("some info"), // вместо &paymentInfo
 		}, nil)
 
 		mockScheduleClient.EXPECT().UpdateLesson(gomock.Any(), &api.UpdateLessonRequest{
 			Id:             lessonID.String(),
-			ConnectionLink: "nigger",
-			PriceRub:       100,
-			PaymentInfo:    "some info",
+			ConnectionLink: proto.String("nigger"),
+			PriceRub:       proto.Int32(100),
+			PaymentInfo:    proto.String("some info"),
 		}).Return(&api.Lesson{}, nil)
 
-		// Первая проверка - ID не существует
 		mockRepo.EXPECT().ExistsByID(gomock.Any(), gomock.Any()).Return(false, nil)
 
 		mockRepo.EXPECT().CreateReceipt(gomock.Any(), &models.PaymentReceiptCreateInput{
@@ -143,7 +142,7 @@ func TestSubmitPaymentReceipt(t *testing.T) {
 		ctrl, svc, mockRepo, _, _, mockSchedule := setup(t)
 		defer ctrl.Finish()
 
-		mockSchedule.EXPECT().GetLesson(gomock.Any(), gomock.Any()).Return(&api.Lesson{PriceRub: 1}, nil)
+		mockSchedule.EXPECT().GetLesson(gomock.Any(), gomock.Any()).Return(&api.Lesson{PriceRub: proto.Int32(1)}, nil)
 		mockSchedule.EXPECT().UpdateLesson(gomock.Any(), gomock.Any()).Return(&api.Lesson{}, nil)
 		mockRepo.EXPECT().ExistsByID(gomock.Any(), gomock.Any()).Return(false, nil)
 		mockRepo.EXPECT().
@@ -200,8 +199,8 @@ func TestGetPaymentInfo(t *testing.T) {
 			Id: lessonID.String(),
 		}).Return(&api.Lesson{
 			Id:          lessonID.String(),
-			PriceRub:    1500,
-			PaymentInfo: "Payment instructions",
+			PriceRub:    proto.Int32(1500),
+			PaymentInfo: proto.String("Payment instructions"),
 		}, nil)
 
 		info, err := svc.GetPaymentInfo(context.Background(), input)
@@ -307,7 +306,7 @@ func TestVerifyReceipt(t *testing.T) {
 		defer ctrl.Finish()
 
 		receiptID := uuid.New()
-		input := &models.VerifyReceipt{ReceiptId: receiptID}
+		input := &models.VerifyReceiptInput{ReceiptId: receiptID}
 
 		updatedReceipt := &models.PaymentReceipt{
 			ID:         receiptID,
@@ -328,7 +327,7 @@ func TestVerifyReceipt(t *testing.T) {
 	t.Run("Error_InvalidInput", func(t *testing.T) {
 		_, svc, _, _, _, _ := setup(t)
 
-		_, err := svc.VerifyReceipt(context.Background(), &models.VerifyReceipt{})
+		_, err := svc.VerifyReceipt(context.Background(), &models.VerifyReceiptInput{})
 		if err == nil {
 			t.Fatal("expected error for empty receipt ID")
 		}
@@ -341,7 +340,7 @@ func TestVerifyReceipt(t *testing.T) {
 		receiptID := uuid.New()
 		mockRepo.EXPECT().UpdateReceipt(gomock.Any(), receiptID, true).Return(nil, errors.New("not found"))
 
-		_, err := svc.VerifyReceipt(context.Background(), &models.VerifyReceipt{ReceiptId: receiptID})
+		_, err := svc.VerifyReceipt(context.Background(), &models.VerifyReceiptInput{ReceiptId: receiptID})
 		if err == nil {
 			t.Fatal("expected error when receipt not found")
 		}

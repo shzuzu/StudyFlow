@@ -33,7 +33,7 @@ func NewPaymentRepository(db Querier) *PaymentRepo {
 }
 
 // CreateReceipt inserts a new receipt and returns it.
-func (r *PaymentRepo) CreateReceipt(ctx context.Context, receipt *models.PaymentReceiptCreateInput) (*models.PaymentReceipt, error) {
+func (r *PaymentRepo) CreateReceipt(ctx context.Context, input *models.PaymentReceiptCreateInput) (*models.PaymentReceipt, error) {
 	query := `
 		INSERT INTO receipts (id, lesson_id, file_id, is_verified, created_at, edited_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -42,10 +42,10 @@ func (r *PaymentRepo) CreateReceipt(ctx context.Context, receipt *models.Payment
 	now := time.Now()
 	pr := &models.PaymentReceipt{}
 	err := pgxscan.Get(ctx, r.db, pr, query,
-		receipt.ID,
-		receipt.LessonID,
-		receipt.FileID,
-		receipt.IsVerified,
+		input.ID,
+		input.LessonID,
+		input.FileID,
+		input.IsVerified,
 		now,
 		now,
 	)

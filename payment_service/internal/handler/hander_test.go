@@ -30,11 +30,12 @@ func TestGetPaymentInfo_Success(t *testing.T) {
 		PaymentDetails: "test payment details",
 	}
 	mockSvc.EXPECT().GetPaymentInfo(ctx, input).Return(response, nil)
-	res, err := h.GetPaymentInfo(ctx, &pb.GetPaymentInfoRequest{LessonId: lessonID.String()})
+	lid := lessonID.String()
+	res, err := h.GetPaymentInfo(ctx, &pb.GetPaymentInfoRequest{LessonId: &lid})
 	assert.NoError(t, err)
-	assert.Equal(t, lessonID.String(), res.LessonId)
-	assert.Equal(t, int32(1000), res.PriceRub)
-	assert.Equal(t, "test payment details", res.PaymentInfo)
+	assert.Equal(t, lessonID.String(), *res.LessonId)         // Разыменовываем указатель
+	assert.Equal(t, int32(1000), *res.PriceRub)               // Разыменовываем указатель
+	assert.Equal(t, "test payment details", *res.PaymentInfo) // Разыменовываем указатель
 }
 
 func TestGetPaymentInfo_NotFound(t *testing.T) {
@@ -47,7 +48,8 @@ func TestGetPaymentInfo_NotFound(t *testing.T) {
 	ctx := context.Background()
 	input := &models.GetPaymentInfoInput{LessonId: lessonID}
 	mockSvc.EXPECT().GetPaymentInfo(ctx, input).Return(nil, errdefs.ErrNotFound)
-	_, err := h.GetPaymentInfo(ctx, &pb.GetPaymentInfoRequest{LessonId: lessonID.String()})
+	lid := lessonID.String()
+	_, err := h.GetPaymentInfo(ctx, &pb.GetPaymentInfoRequest{LessonId: &lid})
 	assert.Error(t, err)
 	assert.Equal(t, codes.NotFound, status.Code(err))
 }
@@ -59,7 +61,8 @@ func TestGetPaymentInfo_InvalidLessonID(t *testing.T) {
 	mockSvc := mocks.NewMockPaymentService(ctrl)
 	h := &PaymentServiceServer{service: mockSvc}
 	ctx := context.Background()
-	_, err := h.GetPaymentInfo(ctx, &pb.GetPaymentInfoRequest{LessonId: "invalid-uuid"})
+	str := "invalid-uuid"
+	_, err := h.GetPaymentInfo(ctx, &pb.GetPaymentInfoRequest{LessonId: &str})
 	assert.Error(t, err)
 	assert.Equal(t, codes.InvalidArgument, status.Code(err))
 }
@@ -85,11 +88,13 @@ func TestSubmitPaymentReceipt_Success(t *testing.T) {
 		EditedAt:   editedAt,
 	}
 	mockSvc.EXPECT().SubmitPaymentReceipt(ctx, input).Return(response, nil)
-	res, err := h.SubmitPaymentReceipt(ctx, &pb.SubmitPaymentReceiptRequest{LessonId: lessonID.String(), FileId: fileID.String()})
+	lID := lessonID.String()
+	fID := fileID.String()
+	res, err := h.SubmitPaymentReceipt(ctx, &pb.SubmitPaymentReceiptRequest{LessonId: &lID, FileId: &fID})
 	assert.NoError(t, err)
 	assert.Equal(t, response.ID.String(), res.Id)
-	assert.Equal(t, lessonID.String(), res.LessonId)
-	assert.Equal(t, fileID.String(), res.FileId)
+	assert.Equal(t, lessonID.String(), *res.LessonId)
+	assert.Equal(t, fileID.String(), *res.FileId)
 	assert.Equal(t, false, res.IsVerified)
 	assert.Equal(t, createdAt, res.CreatedAt.AsTime().Truncate(time.Second))
 	assert.Equal(t, editedAt, res.EditedAt.AsTime().Truncate(time.Second))
@@ -106,7 +111,9 @@ func TestSubmitPaymentReceipt_NotFound(t *testing.T) {
 	ctx := context.Background()
 	input := &models.SubmitPaymentReceiptInput{LessonId: lessonID, FileId: fileID}
 	mockSvc.EXPECT().SubmitPaymentReceipt(ctx, input).Return(nil, errdefs.ErrNotFound)
-	_, err := h.SubmitPaymentReceipt(ctx, &pb.SubmitPaymentReceiptRequest{LessonId: lessonID.String(), FileId: fileID.String()})
+	lID := lessonID.String()
+	fID := fileID.String()
+	_, err := h.SubmitPaymentReceipt(ctx, &pb.SubmitPaymentReceiptRequest{LessonId: &lID, FileId: &fID})
 	assert.Error(t, err)
 	assert.Equal(t, codes.NotFound, status.Code(err))
 }
@@ -122,7 +129,9 @@ func TestSubmitPaymentReceipt_PermissionDenied(t *testing.T) {
 	ctx := context.Background()
 	input := &models.SubmitPaymentReceiptInput{LessonId: lessonID, FileId: fileID}
 	mockSvc.EXPECT().SubmitPaymentReceipt(ctx, input).Return(nil, errdefs.ErrPermissionDenied)
-	_, err := h.SubmitPaymentReceipt(ctx, &pb.SubmitPaymentReceiptRequest{LessonId: lessonID.String(), FileId: fileID.String()})
+	lID := lessonID.String()
+	fID := fileID.String()
+	_, err := h.SubmitPaymentReceipt(ctx, &pb.SubmitPaymentReceiptRequest{LessonId: &lID, FileId: &fID})
 	assert.Error(t, err)
 	assert.Equal(t, codes.PermissionDenied, status.Code(err))
 }
@@ -134,7 +143,9 @@ func TestSubmitPaymentReceipt_InvalidLessonID(t *testing.T) {
 	mockSvc := mocks.NewMockPaymentService(ctrl)
 	h := &PaymentServiceServer{service: mockSvc}
 	ctx := context.Background()
-	_, err := h.SubmitPaymentReceipt(ctx, &pb.SubmitPaymentReceiptRequest{LessonId: "invalid-uuid", FileId: uuid.New().String()})
+	newID := uuid.New().String()
+	str := "invalid-uuid"
+	_, err := h.SubmitPaymentReceipt(ctx, &pb.SubmitPaymentReceiptRequest{LessonId: &str, FileId: &newID})
 	assert.Error(t, err)
 	assert.Equal(t, codes.InvalidArgument, status.Code(err))
 }
@@ -146,7 +157,9 @@ func TestSubmitPaymentReceipt_InvalidFileID(t *testing.T) {
 	mockSvc := mocks.NewMockPaymentService(ctrl)
 	h := &PaymentServiceServer{service: mockSvc}
 	ctx := context.Background()
-	_, err := h.SubmitPaymentReceipt(ctx, &pb.SubmitPaymentReceiptRequest{LessonId: uuid.New().String(), FileId: "invalid-uuid"})
+	newID := uuid.New().String()
+	str := "invalid-uuid"
+	_, err := h.SubmitPaymentReceipt(ctx, &pb.SubmitPaymentReceiptRequest{LessonId: &newID, FileId: &str})
 	assert.Error(t, err)
 	assert.Equal(t, codes.InvalidArgument, status.Code(err))
 }
@@ -176,8 +189,8 @@ func TestGetReceipt_Success(t *testing.T) {
 	res, err := h.GetReceipt(ctx, &pb.GetReceiptRequest{ReceiptId: receiptID.String()})
 	assert.NoError(t, err)
 	assert.Equal(t, receiptID.String(), res.Id)
-	assert.Equal(t, lessonID.String(), res.LessonId)
-	assert.Equal(t, fileID.String(), res.FileId)
+	assert.Equal(t, lessonID.String(), *res.LessonId)
+	assert.Equal(t, fileID.String(), *res.FileId)
 	assert.Equal(t, true, res.IsVerified)
 	assert.Equal(t, createdAt, res.CreatedAt.AsTime().Truncate(time.Second))
 	assert.Equal(t, editedAt, res.EditedAt.AsTime().Truncate(time.Second))
@@ -237,7 +250,7 @@ func TestVerifyReceipt_Success(t *testing.T) {
 	mockSvc := mocks.NewMockPaymentService(ctrl)
 	h := &PaymentServiceServer{service: mockSvc}
 	ctx := context.Background()
-	input := &models.VerifyReceipt{ReceiptId: receiptID}
+	input := &models.VerifyReceiptInput{ReceiptId: receiptID}
 	response := &models.PaymentReceipt{
 		ID:         receiptID,
 		LessonID:   lessonID,
@@ -250,8 +263,8 @@ func TestVerifyReceipt_Success(t *testing.T) {
 	res, err := h.VerifyReceipt(ctx, &pb.VerifyReceiptRequest{ReceiptId: receiptID.String()})
 	assert.NoError(t, err)
 	assert.Equal(t, receiptID.String(), res.Id)
-	assert.Equal(t, lessonID.String(), res.LessonId)
-	assert.Equal(t, fileID.String(), res.FileId)
+	assert.Equal(t, lessonID.String(), *res.LessonId)
+	assert.Equal(t, fileID.String(), *res.FileId)
 	assert.Equal(t, true, res.IsVerified)
 	assert.Equal(t, createdAt, res.CreatedAt.AsTime().Truncate(time.Second))
 	assert.Equal(t, editedAt, res.EditedAt.AsTime().Truncate(time.Second))
@@ -265,7 +278,7 @@ func TestVerifyReceipt_NotFound(t *testing.T) {
 	mockSvc := mocks.NewMockPaymentService(ctrl)
 	h := &PaymentServiceServer{service: mockSvc}
 	ctx := context.Background()
-	input := &models.VerifyReceipt{ReceiptId: receiptID}
+	input := &models.VerifyReceiptInput{ReceiptId: receiptID}
 	mockSvc.EXPECT().VerifyReceipt(ctx, input).Return(nil, errdefs.ErrNotFound)
 	_, err := h.VerifyReceipt(ctx, &pb.VerifyReceiptRequest{ReceiptId: receiptID.String()})
 	assert.Error(t, err)
@@ -280,7 +293,7 @@ func TestVerifyReceipt_PermissionDenied(t *testing.T) {
 	mockSvc := mocks.NewMockPaymentService(ctrl)
 	h := &PaymentServiceServer{service: mockSvc}
 	ctx := context.Background()
-	input := &models.VerifyReceipt{ReceiptId: receiptID}
+	input := &models.VerifyReceiptInput{ReceiptId: receiptID}
 	mockSvc.EXPECT().VerifyReceipt(ctx, input).Return(nil, errdefs.ErrPermissionDenied)
 	_, err := h.VerifyReceipt(ctx, &pb.VerifyReceiptRequest{ReceiptId: receiptID.String()})
 	assert.Error(t, err)

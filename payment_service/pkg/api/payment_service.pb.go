@@ -24,7 +24,7 @@ const (
 
 type GetPaymentInfoRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	LessonId      string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`
+	LessonId      *string                `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3,oneof" json:"lesson_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -60,16 +60,16 @@ func (*GetPaymentInfoRequest) Descriptor() ([]byte, []int) {
 }
 
 func (x *GetPaymentInfoRequest) GetLessonId() string {
-	if x != nil {
-		return x.LessonId
+	if x != nil && x.LessonId != nil {
+		return *x.LessonId
 	}
 	return ""
 }
 
 type SubmitPaymentReceiptRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	LessonId      string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`
-	FileId        string                 `protobuf:"bytes,2,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"` // чек (file_service.files.id)
+	LessonId      *string                `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3,oneof" json:"lesson_id,omitempty"`
+	FileId        *string                `protobuf:"bytes,2,opt,name=file_id,json=fileId,proto3,oneof" json:"file_id,omitempty"` // чек (file_service.files.id)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -105,15 +105,15 @@ func (*SubmitPaymentReceiptRequest) Descriptor() ([]byte, []int) {
 }
 
 func (x *SubmitPaymentReceiptRequest) GetLessonId() string {
-	if x != nil {
-		return x.LessonId
+	if x != nil && x.LessonId != nil {
+		return *x.LessonId
 	}
 	return ""
 }
 
 func (x *SubmitPaymentReceiptRequest) GetFileId() string {
-	if x != nil {
-		return x.FileId
+	if x != nil && x.FileId != nil {
+		return *x.FileId
 	}
 	return ""
 }
@@ -252,9 +252,9 @@ func (x *GetReceiptFileRequest) GetReceiptId() string {
 
 type PaymentInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	LessonId      string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`
-	PriceRub      int32                  `protobuf:"varint,2,opt,name=price_rub,json=priceRub,proto3" json:"price_rub,omitempty"`
-	PaymentInfo   string                 `protobuf:"bytes,3,opt,name=payment_info,json=paymentInfo,proto3" json:"payment_info,omitempty"`
+	LessonId      *string                `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3,oneof" json:"lesson_id,omitempty"`
+	PriceRub      *int32                 `protobuf:"varint,2,opt,name=price_rub,json=priceRub,proto3,oneof" json:"price_rub,omitempty"`
+	PaymentInfo   *string                `protobuf:"bytes,3,opt,name=payment_info,json=paymentInfo,proto3,oneof" json:"payment_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -290,31 +290,31 @@ func (*PaymentInfo) Descriptor() ([]byte, []int) {
 }
 
 func (x *PaymentInfo) GetLessonId() string {
-	if x != nil {
-		return x.LessonId
+	if x != nil && x.LessonId != nil {
+		return *x.LessonId
 	}
 	return ""
 }
 
 func (x *PaymentInfo) GetPriceRub() int32 {
-	if x != nil {
-		return x.PriceRub
+	if x != nil && x.PriceRub != nil {
+		return *x.PriceRub
 	}
 	return 0
 }
 
 func (x *PaymentInfo) GetPaymentInfo() string {
-	if x != nil {
-		return x.PaymentInfo
+	if x != nil && x.PaymentInfo != nil {
+		return *x.PaymentInfo
 	}
 	return ""
 }
 
 type Receipt struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                             // UUIDv7
-	LessonId      string                 `protobuf:"bytes,2,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"` // Refers to schedule.lessons.id
-	FileId        string                 `protobuf:"bytes,3,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`       // Refers to file_service.files.id
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                   // UUIDv7
+	LessonId      *string                `protobuf:"bytes,2,opt,name=lesson_id,json=lessonId,proto3,oneof" json:"lesson_id,omitempty"` // Refers to schedule.lessons.id
+	FileId        *string                `protobuf:"bytes,3,opt,name=file_id,json=fileId,proto3,oneof" json:"file_id,omitempty"`       // Refers to file_service.files.id
 	IsVerified    bool                   `protobuf:"varint,4,opt,name=is_verified,json=isVerified,proto3" json:"is_verified,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	EditedAt      *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=edited_at,json=editedAt,proto3" json:"edited_at,omitempty"`
@@ -360,15 +360,15 @@ func (x *Receipt) GetId() string {
 }
 
 func (x *Receipt) GetLessonId() string {
-	if x != nil {
-		return x.LessonId
+	if x != nil && x.LessonId != nil {
+		return *x.LessonId
 	}
 	return ""
 }
 
 func (x *Receipt) GetFileId() string {
-	if x != nil {
-		return x.FileId
+	if x != nil && x.FileId != nil {
+		return *x.FileId
 	}
 	return ""
 }
@@ -396,7 +396,7 @@ func (x *Receipt) GetEditedAt() *timestamppb.Timestamp {
 
 type ReceiptFileURL struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"` // временная ссылка на файл из file-service
+	Url           *string                `protobuf:"bytes,1,opt,name=url,proto3,oneof" json:"url,omitempty"` // временная ссылка на файл из file-service
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -432,8 +432,8 @@ func (*ReceiptFileURL) Descriptor() ([]byte, []int) {
 }
 
 func (x *ReceiptFileURL) GetUrl() string {
-	if x != nil {
-		return x.Url
+	if x != nil && x.Url != nil {
+		return *x.Url
 	}
 	return ""
 }
@@ -443,12 +443,18 @@ var File_payment_service_proto protoreflect.FileDescriptor
 const file_payment_service_proto_rawDesc = "" +
 	"\n" +
 	"\x15payment_service.proto\x12\n" +
-	"payment.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"4\n" +
-	"\x15GetPaymentInfoRequest\x12\x1b\n" +
-	"\tlesson_id\x18\x01 \x01(\tR\blessonId\"S\n" +
-	"\x1bSubmitPaymentReceiptRequest\x12\x1b\n" +
-	"\tlesson_id\x18\x01 \x01(\tR\blessonId\x12\x17\n" +
-	"\afile_id\x18\x02 \x01(\tR\x06fileId\"2\n" +
+	"payment.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"G\n" +
+	"\x15GetPaymentInfoRequest\x12 \n" +
+	"\tlesson_id\x18\x01 \x01(\tH\x00R\blessonId\x88\x01\x01B\f\n" +
+	"\n" +
+	"_lesson_id\"w\n" +
+	"\x1bSubmitPaymentReceiptRequest\x12 \n" +
+	"\tlesson_id\x18\x01 \x01(\tH\x00R\blessonId\x88\x01\x01\x12\x1c\n" +
+	"\afile_id\x18\x02 \x01(\tH\x01R\x06fileId\x88\x01\x01B\f\n" +
+	"\n" +
+	"_lesson_idB\n" +
+	"\n" +
+	"\b_file_id\"2\n" +
 	"\x11GetReceiptRequest\x12\x1d\n" +
 	"\n" +
 	"receipt_id\x18\x01 \x01(\tR\treceiptId\"5\n" +
@@ -457,22 +463,32 @@ const file_payment_service_proto_rawDesc = "" +
 	"receipt_id\x18\x01 \x01(\tR\treceiptId\"6\n" +
 	"\x15GetReceiptFileRequest\x12\x1d\n" +
 	"\n" +
-	"receipt_id\x18\x01 \x01(\tR\treceiptId\"j\n" +
-	"\vPaymentInfo\x12\x1b\n" +
-	"\tlesson_id\x18\x01 \x01(\tR\blessonId\x12\x1b\n" +
-	"\tprice_rub\x18\x02 \x01(\x05R\bpriceRub\x12!\n" +
-	"\fpayment_info\x18\x03 \x01(\tR\vpaymentInfo\"\xe4\x01\n" +
+	"receipt_id\x18\x01 \x01(\tR\treceiptId\"\xa6\x01\n" +
+	"\vPaymentInfo\x12 \n" +
+	"\tlesson_id\x18\x01 \x01(\tH\x00R\blessonId\x88\x01\x01\x12 \n" +
+	"\tprice_rub\x18\x02 \x01(\x05H\x01R\bpriceRub\x88\x01\x01\x12&\n" +
+	"\fpayment_info\x18\x03 \x01(\tH\x02R\vpaymentInfo\x88\x01\x01B\f\n" +
+	"\n" +
+	"_lesson_idB\f\n" +
+	"\n" +
+	"_price_rubB\x0f\n" +
+	"\r_payment_info\"\x88\x02\n" +
 	"\aReceipt\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
-	"\tlesson_id\x18\x02 \x01(\tR\blessonId\x12\x17\n" +
-	"\afile_id\x18\x03 \x01(\tR\x06fileId\x12\x1f\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12 \n" +
+	"\tlesson_id\x18\x02 \x01(\tH\x00R\blessonId\x88\x01\x01\x12\x1c\n" +
+	"\afile_id\x18\x03 \x01(\tH\x01R\x06fileId\x88\x01\x01\x12\x1f\n" +
 	"\vis_verified\x18\x04 \x01(\bR\n" +
 	"isVerified\x129\n" +
 	"\n" +
 	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x127\n" +
-	"\tedited_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\beditedAt\"\"\n" +
-	"\x0eReceiptFileURL\x12\x10\n" +
-	"\x03url\x18\x01 \x01(\tR\x03url2\x8f\x03\n" +
+	"\tedited_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\beditedAtB\f\n" +
+	"\n" +
+	"_lesson_idB\n" +
+	"\n" +
+	"\b_file_id\"/\n" +
+	"\x0eReceiptFileURL\x12\x15\n" +
+	"\x03url\x18\x01 \x01(\tH\x00R\x03url\x88\x01\x01B\x06\n" +
+	"\x04_url2\x8f\x03\n" +
 	"\x0ePaymentService\x12L\n" +
 	"\x0eGetPaymentInfo\x12!.payment.v1.GetPaymentInfoRequest\x1a\x17.payment.v1.PaymentInfo\x12T\n" +
 	"\x14SubmitPaymentReceipt\x12'.payment.v1.SubmitPaymentReceiptRequest\x1a\x13.payment.v1.Receipt\x12@\n" +
@@ -530,6 +546,11 @@ func file_payment_service_proto_init() {
 	if File_payment_service_proto != nil {
 		return
 	}
+	file_payment_service_proto_msgTypes[0].OneofWrappers = []any{}
+	file_payment_service_proto_msgTypes[1].OneofWrappers = []any{}
+	file_payment_service_proto_msgTypes[5].OneofWrappers = []any{}
+	file_payment_service_proto_msgTypes[6].OneofWrappers = []any{}
+	file_payment_service_proto_msgTypes[7].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

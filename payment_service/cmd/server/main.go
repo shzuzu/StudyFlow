@@ -26,11 +26,11 @@ import (
 	"userservice/pkg/api"
 )
 
-const (
-	envLocal = "local"
-	envDev   = "dev"
-	envProd  = "prod"
-)
+//const (
+//	envLocal = "local"
+//	envDev   = "dev"
+//	envProd  = "prod"
+//)
 
 func main() {
 	ctx := context.Background()

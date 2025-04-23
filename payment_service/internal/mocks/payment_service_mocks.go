@@ -102,7 +102,7 @@ func (mr *MockPaymentServiceMockRecorder) SubmitPaymentReceipt(ctx, input any) *
 }
 
 // VerifyReceipt mocks base method.
-func (m *MockPaymentService) VerifyReceipt(ctx context.Context, input *models.VerifyReceipt) (*models.PaymentReceipt, error) {
+func (m *MockPaymentService) VerifyReceipt(ctx context.Context, input *models.VerifyReceiptInput) (*models.PaymentReceipt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "VerifyReceipt", ctx, input)
 	ret0, _ := ret[0].(*models.PaymentReceipt)

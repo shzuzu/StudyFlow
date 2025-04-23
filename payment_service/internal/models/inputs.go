@@ -15,7 +15,7 @@ type GetReceiptInput struct {
 	ReceiptId uuid.UUID
 }
 
-type VerifyReceipt struct {
+type VerifyReceiptInput struct {
 	ReceiptId uuid.UUID
 }
 
