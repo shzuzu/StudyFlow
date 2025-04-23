@@ -20,7 +20,20 @@ test_payment_service:
   stage: test
   script:
     - cd payment_service/internal/service
-    - go test -race -cover -v
+    - |
+      coverage=$(go test -cover ./... | grep -E 'coverage:.*%' | awk '{gsub(/%/,"",$5); print $5}')
+      echo "Actual test coverage: ${coverage}%"
+
+      if [ $(echo "$coverage < 30" | bc -l) -eq 1 ]; then
+        echo "ERROR: Coverage ${coverage}% is below 30% threshold"
+        exit 1
+      else
+        echo "✅ Coverage check passed"
+      fi
+
+  artifacts:
+    paths:
+      - payment_service/internal/service/coverage.out
 
 build_services:
   stage: build
@@ -31,3 +44,5 @@ build_services:
     paths:
       - ./*/Dockerfile
     expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
