@@ -14,6 +14,15 @@ services:
     volumes:
       - minio_data:/data
 
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    expose:
+      - '6379'
+    command: redis-server --save 20 1
+    volumes:
+      - cache:/data
+
   user-db:
     image: postgres:latest
     expose:
@@ -186,6 +195,16 @@ services:
       HOMEWORK_SERVICE_URL: "homework-service:50051"
       PAYMENT_SERVICE_URL: "payment-service:50051"
       MINIO_URL: "http://minio:9000"
+      REDIS_URL: "cache:6379"
+
+  nginx:
+    image: nginx:latest
+    depends_on:
+      - api-gateway
+    ports:
+      - "80:80"               # доступ снаружи на 80 порт
+    volumes:
+      - ./ngnix/default.conf:/etc/nginx/conf.d/default.conf:ro
 
 
 volumes:
@@ -195,3 +214,5 @@ volumes:
   homework-db:
   payment-db:
   schedule-db:
+  cache:
+    driver: local
