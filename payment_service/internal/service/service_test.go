@@ -4,19 +4,20 @@ import (
 	"context"
 	"errors"
 	api2 "fileservice/pkg/api"
+	errdefs "paymentservice/internal/errors"
+	"paymentservice/internal/mocks"
+	"paymentservice/internal/models"
+	"paymentservice/internal/service"
+	api "schedule_service/pkg/api"
+	"testing"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
-	errdefs "paymentservice/internal/errors"
-	"paymentservice/internal/mocks"
-	"paymentservice/internal/models"
-	"paymentservice/internal/service"
-	"schedule_service/pkg/api"
-	"testing"
-	"time"
 )
 
 func setup(t *testing.T) (*gomock.Controller, *service.PaymentService, *mocks.MockIPaymentRepo, *mocks.MockUserServiceClient, *mocks.MockFileServiceClient, *mocks.MockScheduleServiceClient) {
