@@ -1,0 +1,34 @@
+image: golang:latest
+
+stages:
+  - test
+  - build
+
+services:
+  - docker:dind
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+
+before_script:
+  - apt-get update -y && apt-get install -y docker-compose
+  - docker --version
+  - docker-compose --version
+
+test_payment_service:
+  stage: test
+  script:
+    - cd payment_service/internal/service
+    - go test -race -cover
+
+build_services:
+  stage: build
+  needs: ["test_payment_service"]
+  script:
+    - docker-compose build
+  artifacts:
+    paths:
+      - ./*/Dockerfile
+    expire_in: 1 week
