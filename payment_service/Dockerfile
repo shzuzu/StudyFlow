@@ -1,28 +1,28 @@
-# Используем многоступенчатую сборку
-FROM golang:1.21-alpine AS builder
-
+FROM golang:1.24-alpine AS builder
 WORKDIR /app
 
-COPY go.mod go.sum ./
-RUN go mod download
+COPY payment_service/go.mod ./
+COPY payment_service/go.sum ./
 
-COPY . .
+COPY common_library/ /common_library/
+COPY user_service /user_service
+COPY file_service /file_service
+COPY schedule_service /schedule_service
 
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /payment-service ./cmd/main.go
 
-FROM alpine:3.18
+RUN go mod download || echo "go mod downloading failed"
+RUN go mod tidy
 
-WORKDIR /root/
+COPY payment_service/ ./
 
-COPY --from=builder /payment-service .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server/main.go
+
+FROM alpine:latest
+WORKDIR /app
+
+COPY --from=builder /server ./
+COPY --from=builder /app/internal/config ./config/
 COPY --from=builder /app/migrations ./migrations
 
-# Устанавливаем tzdata для работы с временными зонами
-RUN apk --no-cache add tzdata
-
-# Настройки
-ENV TZ=Europe/Moscow
-EXPOSE 50053
-
-# Запуск приложения
-CMD ["./payment-service"]
+EXPOSE 50051
+CMD ["./server"]

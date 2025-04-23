@@ -1,3 +1,5 @@
+//go:generate mockgen -source=handler.go -destination=../mocks/payment_service_mocks.go -package=mocks
+
 package handler
 
 import (
@@ -59,7 +61,7 @@ func (h *PaymentServiceServer) SubmitPaymentReceipt(ctx context.Context, req *pb
 	if err != nil {
 		return nil, status.New(codes.InvalidArgument, "invalid lesson ID: "+err.Error()).Err()
 	}
-	fileID, err := uuid.Parse(req.LessonId)
+	fileID, err := uuid.Parse(req.FileId)
 	if err != nil {
 		return nil, status.New(codes.InvalidArgument, "invalid file ID: "+err.Error()).Err()
 	}

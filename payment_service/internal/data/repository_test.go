@@ -2,10 +2,6 @@ package data
 
 import (
 	"context"
-	"errors"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"slices"
 	"testing"
 	"time"
 
@@ -32,7 +28,7 @@ func TestPaymentRepo_CreateReceipt(t *testing.T) {
 	require.NoError(t, err)
 	defer mockPool.Close()
 
-	repo := NewPaymentRepository(mockPool) // Убедись, что это правильно принимает пул
+	repo := NewPaymentRepository(mockPool)
 	ctx := context.Background()
 	now := time.Now()
 	id := uuid.New()
@@ -60,7 +56,7 @@ func TestPaymentRepo_CreateReceipt(t *testing.T) {
 }
 
 func TestPaymentRepo_GetReceiptByID_NotFound(t *testing.T) {
-	mockPool, err := pgxmock.NewPool() // Используем пул вместо Conn
+	mockPool, err := pgxmock.NewPool()
 	require.NoError(t, err)
 	defer mockPool.Close()
 
@@ -77,7 +73,7 @@ func TestPaymentRepo_GetReceiptByID_NotFound(t *testing.T) {
 }
 
 func TestPaymentRepo_ExistsByID(t *testing.T) {
-	mockPool, err := pgxmock.NewPool() // Используем пул вместо Conn
+	mockPool, err := pgxmock.NewPool()
 	require.NoError(t, err)
 	defer mockPool.Close()
 
@@ -109,25 +105,4 @@ func TestPaymentRepo_GetReceiptByLessonID_NotFound(t *testing.T) {
 
 	_, err = repo.GetReceiptByLessonID(ctx, lessonID)
 	assert.ErrorIs(t, err, errdefs.ErrNotFound)
-}
-func mapError(err error, possibleErrors ...error) error {
-	switch {
-	case err == nil:
-		return nil
-
-	case errors.Is(err, errdefs.ErrNotFound) && slices.Contains(possibleErrors, errdefs.ErrNotFound):
-		return status.New(codes.NotFound, err.Error()).Err() // используй status.New()
-
-	case errors.Is(err, errdefs.ErrPermissionDenied) && slices.Contains(possibleErrors, errdefs.ErrPermissionDenied):
-		return status.New(codes.PermissionDenied, err.Error()).Err() // используй status.New()
-
-	case errors.Is(err, errdefs.ErrInvalidPayment) && slices.Contains(possibleErrors, errdefs.ErrInvalidPayment):
-		return status.New(codes.Unauthenticated, err.Error()).Err() // используй status.New()
-
-	case errors.Is(err, errdefs.ErrInvalidArgument) && slices.Contains(possibleErrors, errdefs.ErrInvalidArgument):
-		return status.New(codes.InvalidArgument, err.Error()).Err() // используй status.New()
-
-	default:
-		return status.New(codes.Internal, err.Error()).Err() // используй status.New()
-	}
 }

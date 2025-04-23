@@ -37,7 +37,9 @@ func main() {
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
 
-	zapLogger, err := zap.NewDevelopment()
+	//zapLogger, err := zap.NewDevelopment()
+	zapLogger, err := zap.NewProduction()
+
 	if err != nil {
 		panic(err)
 	}
@@ -50,15 +52,16 @@ func main() {
 	if err != nil {
 		logger.Fatal(ctx, "cannot create config", zap.Error(err))
 	}
-
+	logger.Info(ctx, "created config")
 	database, err := db.New(ctx, cfg)
 	if err != nil {
 		logger.Fatal(ctx, "cannot create db", zap.Error(err))
 	}
+	logger.Info(ctx, "connected db")
 
 	paymentRepo := data.NewPaymentRepository(database)
 	stringPort := os.Getenv("GRPC_PORT")
-	logger.Info(ctx, stringPort)
+
 	serverAddr := flag.String("server", "localhost:"+stringPort, "gRPC server address")
 	flag.Parse()
 	conn, err := grpc.NewClient(*serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
