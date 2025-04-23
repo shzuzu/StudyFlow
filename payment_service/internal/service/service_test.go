@@ -30,6 +30,7 @@ func setup(t *testing.T) (*gomock.Controller, *service.PaymentService, *mocks.Mo
 	svc := service.NewPaymentService(mockRepo, mockUserClient, mockFileClient, mockScheduleClient)
 	return ctrl, svc, mockRepo, mockUserClient, mockFileClient, mockScheduleClient
 }
+
 func TestSubmitPaymentReceipt(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		ctrl, svc, mockRepo, _, _, mockScheduleClient := setup(t)
@@ -43,14 +44,14 @@ func TestSubmitPaymentReceipt(t *testing.T) {
 			Id: lessonID.String(),
 		}).Return(&api.Lesson{
 			Id:             lessonID.String(),
-			ConnectionLink: proto.String("nigger"),    // вместо &variable
-			PriceRub:       proto.Int32(100),          // вместо &priceRub
-			PaymentInfo:    proto.String("some info"), // вместо &paymentInfo
+			ConnectionLink: proto.String("connection_link"),
+			PriceRub:       proto.Int32(100),
+			PaymentInfo:    proto.String("some info"),
 		}, nil)
 
 		mockScheduleClient.EXPECT().UpdateLesson(gomock.Any(), &api.UpdateLessonRequest{
 			Id:             lessonID.String(),
-			ConnectionLink: proto.String("nigger"),
+			ConnectionLink: proto.String("connection_link"),
 			PriceRub:       proto.Int32(100),
 			PaymentInfo:    proto.String("some info"),
 		}).Return(&api.Lesson{}, nil)
@@ -138,6 +139,7 @@ func TestSubmitPaymentReceipt(t *testing.T) {
 			t.Fatalf("want upd error, got %v", err)
 		}
 	})
+
 	t.Run("Error_CreateReceipt", func(t *testing.T) {
 		ctrl, svc, mockRepo, _, _, mockSchedule := setup(t)
 		defer ctrl.Finish()
@@ -156,6 +158,7 @@ func TestSubmitPaymentReceipt(t *testing.T) {
 			t.Fatalf("expected ErrNotFound, got %v", err)
 		}
 	})
+
 	t.Run("RetryLogic_SucceedsAfterRetries", func(t *testing.T) {
 		ctrl, svc, mockRepo, _, _, mockScheduleClient := setup(t)
 		defer ctrl.Finish()
@@ -184,7 +187,6 @@ func TestSubmitPaymentReceipt(t *testing.T) {
 
 		assert.NoError(t, err)
 	})
-
 }
 
 func TestGetPaymentInfo(t *testing.T) {
@@ -233,20 +235,40 @@ func TestGetPaymentInfo(t *testing.T) {
 			t.Fatal("expected error when lesson not found")
 		}
 	})
-	t.Run("Error_ReceiptNotFound", func(t *testing.T) {
-		ctrl, svc, mockRepo, _, _, _ := setup(t)
+
+	t.Run("Error_PriceRubNil", func(t *testing.T) {
+		ctrl, svc, _, _, _, mockScheduleClient := setup(t)
 		defer ctrl.Finish()
 
-		mockRepo.EXPECT().
-			GetReceiptByID(gomock.Any(), gomock.Any()).
-			Return(nil, errors.New("not found"))
+		lessonID := uuid.New()
+		mockScheduleClient.EXPECT().GetLesson(gomock.Any(), gomock.Any()).Return(&api.Lesson{
+			Id:          lessonID.String(),
+			PriceRub:    nil,
+			PaymentInfo: proto.String("Payment instructions"),
+		}, nil)
 
-		_, err := svc.GetReceiptFile(context.Background(), &models.GetReceiptFileInput{ReceiptId: uuid.New()})
+		_, err := svc.GetPaymentInfo(context.Background(), &models.GetPaymentInfoInput{LessonId: lessonID})
 		if err == nil {
-			t.Fatal("expected error when receipt missing")
+			t.Fatal("expected error when PriceRub is nil")
 		}
 	})
 
+	t.Run("Error_PaymentInfoNil", func(t *testing.T) {
+		ctrl, svc, _, _, _, mockScheduleClient := setup(t)
+		defer ctrl.Finish()
+
+		lessonID := uuid.New()
+		mockScheduleClient.EXPECT().GetLesson(gomock.Any(), gomock.Any()).Return(&api.Lesson{
+			Id:          lessonID.String(),
+			PriceRub:    proto.Int32(1500),
+			PaymentInfo: nil,
+		}, nil)
+
+		_, err := svc.GetPaymentInfo(context.Background(), &models.GetPaymentInfoInput{LessonId: lessonID})
+		if err == nil {
+			t.Fatal("expected error when PaymentInfo is nil")
+		}
+	})
 }
 
 func TestGetReceipt(t *testing.T) {
@@ -280,7 +302,7 @@ func TestGetReceipt(t *testing.T) {
 	t.Run("Error_InvalidInput", func(t *testing.T) {
 		_, svc, _, _, _, _ := setup(t)
 
-		_, err := svc.GetReceipt(context.Background(), &models.GetReceiptInput{})
+		_, err := svc.GetReceiptFile(context.Background(), &models.GetReceiptFileInput{})
 		if err == nil {
 			t.Fatal("expected error for empty receipt ID")
 		}
@@ -293,7 +315,7 @@ func TestGetReceipt(t *testing.T) {
 		receiptID := uuid.New()
 		mockRepo.EXPECT().GetReceiptByID(gomock.Any(), receiptID).Return(nil, errors.New("not found"))
 
-		_, err := svc.GetReceipt(context.Background(), &models.GetReceiptInput{ReceiptId: receiptID})
+		_, err := svc.GetReceiptFile(context.Background(), &models.GetReceiptFileInput{ReceiptId: receiptID})
 		if err == nil {
 			t.Fatal("expected error when receipt not found")
 		}

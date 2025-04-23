@@ -56,7 +56,7 @@ func NewPaymentService(
 }
 
 func (s *PaymentService) SubmitPaymentReceipt(ctx context.Context, input *models.SubmitPaymentReceiptInput) (*models.PaymentReceipt, error) {
-	if input.FileId == uuid.Nil || input.LessonId == uuid.Nil {
+	if input == nil || input.FileId == uuid.Nil || input.LessonId == uuid.Nil {
 		return nil, errdefs.ErrInvalidArgument
 	}
 
@@ -64,10 +64,11 @@ func (s *PaymentService) SubmitPaymentReceipt(ctx context.Context, input *models
 		Id: input.LessonId.String(),
 	}
 
-	lesson, err := retry[*api3.Lesson](ctx, maxRetries, retryDelay, func() (*api3.Lesson, error) {
+	lesson, err := retry(ctx, maxRetries, retryDelay, func() (*api3.Lesson, error) {
 		return s.scheduleClient.GetLesson(ctx, getLessonRequest)
 	})
 	if err != nil {
+		log.Printf("Error getting lesson: %v", err)
 		return nil, err
 	}
 
@@ -82,15 +83,18 @@ func (s *PaymentService) SubmitPaymentReceipt(ctx context.Context, input *models
 		PriceRub:       lesson.PriceRub,
 		PaymentInfo:    lesson.PaymentInfo,
 	}
-	lesson, err = retry[*api3.Lesson](ctx, maxRetries, retryDelay, func() (*api3.Lesson, error) {
+	lesson, err = retry(ctx, maxRetries, retryDelay, func() (*api3.Lesson, error) {
 		return s.scheduleClient.UpdateLesson(ctx, updateLessonRequest)
 	})
 	if err != nil {
+		log.Printf("Error updating lesson: %v", err)
 		return nil, err
 	}
+
 	newReceiptID := uuid.New()
 	exists, err := s.repo.ExistsByID(ctx, newReceiptID)
 	if err != nil {
+		log.Printf("Error checking receipt existence: %v", err)
 		return nil, err
 	}
 	if exists {
@@ -106,6 +110,7 @@ func (s *PaymentService) SubmitPaymentReceipt(ctx context.Context, input *models
 		return s.repo.CreateReceipt(ctx, createReceiptInput)
 	})
 	if err != nil {
+		log.Printf("Error creating receipt: %v", err)
 		return nil, errdefs.ErrNotFound
 	}
 
@@ -115,7 +120,7 @@ func (s *PaymentService) SubmitPaymentReceipt(ctx context.Context, input *models
 }
 
 func (s *PaymentService) GetPaymentInfo(ctx context.Context, input *models.GetPaymentInfoInput) (*models.PaymentInfo, error) {
-	if input.LessonId == uuid.Nil {
+	if input == nil || input.LessonId == uuid.Nil {
 		return nil, errdefs.ErrInvalidArgument
 	}
 
@@ -127,11 +132,19 @@ func (s *PaymentService) GetPaymentInfo(ctx context.Context, input *models.GetPa
 		return s.scheduleClient.GetLesson(ctx, getLessonRequest)
 	})
 	if err != nil {
+		log.Printf("Error getting lesson: %v", err)
 		return nil, err
 	}
-	if *lesson.PriceRub == 0 {
-		*lesson.PriceRub = 0
+
+	if lesson.PriceRub == nil {
+		log.Println("PriceRub is nil")
+		return nil, fmt.Errorf("priceRub is nil")
 	}
+	if lesson.PaymentInfo == nil {
+		log.Println("PaymentInfo is nil")
+		return nil, fmt.Errorf("paymentInfo is nil")
+	}
+
 	paymentInfo := &models.PaymentInfo{
 		LessonID:       input.LessonId,
 		PriceRUB:       *lesson.PriceRub,
@@ -139,52 +152,62 @@ func (s *PaymentService) GetPaymentInfo(ctx context.Context, input *models.GetPa
 	}
 	return paymentInfo, nil
 }
-func (s *PaymentService) GetReceipt(ctx context.Context, input *models.GetReceiptInput) (*models.PaymentReceipt, error) {
-	if input.ReceiptId == uuid.Nil {
-		return nil, errdefs.ErrInvalidArgument
-	}
-
-	receipt, err := retry[*models.PaymentReceipt](ctx, maxRetries, retryDelay, func() (*models.PaymentReceipt, error) {
-		return s.repo.GetReceiptByID(ctx, input.ReceiptId)
-	})
-	if err != nil {
-		return nil, err
-	}
-	return receipt, nil
-}
 
 func (s *PaymentService) VerifyReceipt(ctx context.Context, input *models.VerifyReceiptInput) (*models.PaymentReceipt, error) {
-	if input.ReceiptId == uuid.Nil {
+	if input == nil || input.ReceiptId == uuid.Nil {
 		return nil, errdefs.ErrInvalidArgument
 	}
+
 	receipt, err := retry(ctx, maxRetries, retryDelay, func() (*models.PaymentReceipt, error) {
 		return s.repo.UpdateReceipt(ctx, input.ReceiptId, true)
 	})
 	if err != nil {
+		log.Printf("Error verifying receipt: %v", err)
 		return nil, err
 	}
 	return receipt, nil
 }
 
 func (s *PaymentService) GetReceiptFile(ctx context.Context, input *models.GetReceiptFileInput) (*models.ReceiptFileUrl, error) {
-	if input.ReceiptId == uuid.Nil {
+	if input == nil || input.ReceiptId == uuid.Nil {
 		return nil, errdefs.ErrInvalidArgument
 	}
-	receipt, err := retry[*models.PaymentReceipt](ctx, maxRetries, retryDelay, func() (*models.PaymentReceipt, error) {
+
+	receipt, err := retry(ctx, maxRetries, retryDelay, func() (*models.PaymentReceipt, error) {
 		return s.repo.GetReceiptByID(ctx, input.ReceiptId)
 	})
 	if err != nil {
+		log.Printf("Error getting receipt: %v", err)
 		return nil, err
 	}
+
 	generateDownloadURLRequest := &api2.GenerateDownloadURLRequest{FileId: receipt.FileID.String()}
 	url, err := s.fileClient.GenerateDownloadURL(ctx, generateDownloadURLRequest)
 	if err != nil {
+		log.Printf("Error generating download URL: %v", err)
 		return nil, err
 	}
+
 	receiptFileURL := &models.ReceiptFileUrl{
 		URL: url.GetUrl(),
 	}
 	return receiptFileURL, nil
+}
+
+func (s *PaymentService) GetReceipt(ctx context.Context, input *models.GetReceiptInput) (*models.PaymentReceipt, error) {
+	if input == nil || input.ReceiptId == uuid.Nil {
+		return nil, errdefs.ErrInvalidArgument
+	}
+
+	receipt, err := retry(ctx, maxRetries, retryDelay, func() (*models.PaymentReceipt, error) {
+		return s.repo.GetReceiptByID(ctx, input.ReceiptId)
+	})
+	if err != nil {
+		log.Printf("Error getting receipt: %v", err)
+		return nil, err
+	}
+
+	return receipt, nil
 }
 
 func retry[T any](
