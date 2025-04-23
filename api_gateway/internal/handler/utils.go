@@ -8,7 +8,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"io"
@@ -31,6 +33,18 @@ type Cache interface {
 func mapErr(err error) int {
 	if errors.Is(err, BadRequestError) {
 		return http.StatusBadRequest
+	}
+	if st, ok := status.FromError(err); ok {
+		switch st.Code() {
+		case codes.InvalidArgument:
+			return http.StatusBadRequest
+		case codes.AlreadyExists:
+			return http.StatusConflict
+		case codes.PermissionDenied:
+			return http.StatusForbidden
+		case codes.NotFound:
+			return http.StatusNotFound
+		}
 	}
 	return http.StatusInternalServerError
 }
