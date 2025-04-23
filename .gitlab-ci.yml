@@ -20,7 +20,19 @@ test_payment_service:
   stage: test
   script:
     - cd payment_service/internal/service
-    - go test -race -cover -v
+    - go test -race -coverprofile=coverage.out -covermode=atomic ./...
+    - |
+      TOTAL_COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
+      echo "Total test coverage: $TOTAL_COVERAGE%"
+      if (( $(echo "$TOTAL_COVERAGE < $COVERAGE_THRESHOLD" | bc -l) )); then
+        echo "Coverage is below $COVERAGE_THRESHOLD% threshold"
+        exit 1
+      fi
+  artifacts:
+    paths:
+      - payment_service/internal/service/coverage.out
+    reports:
+      cobertura: payment_service/internal/service/coverage.out
 
 build_services:
   stage: build
@@ -31,3 +43,5 @@ build_services:
     paths:
       - ./*/Dockerfile
     expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
