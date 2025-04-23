@@ -1,4 +1,4 @@
-image: golang:latest
+image: golang:1.24-alpine
 
 stages:
   - test
@@ -13,9 +13,9 @@ variables:
   DOCKER_TLS_CERTDIR: ""
 
 before_script:
-  - apt-get update -y && apt-get install -y docker-compose
+  - apk add --no-cache docker-cli docker-cli-compose
   - docker --version
-  - docker-compose --version
+  - docker compose version
 
 test_payment_service:
   stage: test
