@@ -202,7 +202,7 @@ services:
     depends_on:
       - api-gateway
     ports:
-      - "80:80"               # доступ снаружи на 80 порт
+      - "80:80"
     volumes:
       - ./ngnix/default.conf:/etc/nginx/conf.d/default.conf:ro
 
