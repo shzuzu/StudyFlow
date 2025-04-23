@@ -26,6 +26,7 @@ test_payment_service:
 
       if [ $(echo "$coverage < 30" | bc -l) -eq 1 ]; then
         echo "ERROR: Coverage ${coverage}% is below 30% threshold"
+        exit 1
       else
         echo "✅ Coverage check passed"
       fi
