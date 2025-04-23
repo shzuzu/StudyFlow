@@ -1,13 +1,49 @@
-//go:generate mockgen -source=userServiceClient.go -destination=../mocks/user_service_mock.go
-//.go -package=mocks
-
 package clients
 
 import (
+	"common_library/logging"
 	"context"
+	api2 "fileservice/pkg/api"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	api3 "schedule_service/pkg/api"
 	api4 "userservice/pkg/api"
 )
+
+func New(ctx context.Context, url string) (*grpc.ClientConn, func()) {
+	client, err := grpc.NewClient(
+		url,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		if logger, ok := logging.GetFromContext(ctx); ok {
+			logger.Fatal(ctx, "cannot create user grpc client", zap.Error(err))
+		}
+	}
+
+	closeFunc := func() {
+		err := client.Close()
+		if err != nil {
+			if logger, ok := logging.GetFromContext(ctx); ok {
+				logger.Fatal(ctx, "cannot close user grpc client", zap.Error(err))
+			}
+		}
+	}
+
+	return client, closeFunc
+}
+
+type FileServiceClient interface {
+	GenerateDownloadURL(ctx context.Context, req *api2.GenerateDownloadURLRequest, opts ...grpc.CallOption) (*api2.DownloadURL, error)
+}
+
+type ScheduleServiceClient interface {
+	GetLesson(ctx context.Context, req *api3.GetLessonRequest, opts ...grpc.CallOption) (*api3.Lesson, error)
+	CreateLesson(ctx context.Context, req *api3.CreateLessonRequest, opts ...grpc.CallOption) (*api3.Lesson, error)
+	UpdateLesson(ctx context.Context, req *api3.UpdateLessonRequest, opts ...grpc.CallOption) (*api3.Lesson, error)
+	CancelLesson(ctx context.Context, req *api3.CancelLessonRequest, opts ...grpc.CallOption) (*api3.Lesson, error)
+}
 
 type UserServiceClient interface {
 	RegisterViaTelegram(ctx context.Context, req *api4.RegisterViaTelegramRequest, opts ...grpc.CallOption) (*api4.User, error)

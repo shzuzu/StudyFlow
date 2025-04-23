@@ -38,8 +38,8 @@ func main() {
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
 
-	//zapLogger, err := zap.NewDevelopment()
-	zapLogger, err := zap.NewProduction()
+	zapLogger, err := zap.NewDevelopment()
+	//zapLogger, err := zap.NewProduction()
 
 	if err != nil {
 		panic(err)

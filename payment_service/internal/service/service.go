@@ -48,9 +48,6 @@ func NewPaymentService(
 	fileClient clients.FileServiceClient,
 	scheduleClient clients.ScheduleServiceClient,
 ) *PaymentService {
-	if repo == nil || userClient == nil || fileClient == nil || scheduleClient == nil {
-		panic("all dependencies must be non-nil")
-	}
 
 	return &PaymentService{
 		repo:           repo,
@@ -72,13 +69,8 @@ func (s *PaymentService) SubmitPaymentReceipt(ctx context.Context, input *models
 	lesson, err := retry[*api3.Lesson](ctx, maxRetries, retryDelay, func() (*api3.Lesson, error) {
 		return s.scheduleClient.GetLesson(ctxWithMetadata(ctx), getLessonRequest)
 	})
-
 	if err != nil {
 		return nil, err
-	}
-
-	if lesson == nil {
-		return nil, errdefs.ErrNotFound
 	}
 
 	if lesson.IsPaid {
@@ -98,16 +90,13 @@ func (s *PaymentService) SubmitPaymentReceipt(ctx context.Context, input *models
 	if err != nil {
 		return nil, err
 	}
-	if lesson == nil {
-		return nil, errdefs.ErrInvalidArgument
-	}
 	newReceiptID := uuid.New()
 	exists, err := s.repo.ExistsByID(ctx, newReceiptID)
 	if err != nil {
 		return nil, err
 	}
 	if exists {
-		return nil, errdefs.InternalError
+		return nil, errdefs.ErrAlreadyExists
 	}
 
 	createReceiptInput := &models.PaymentReceiptCreateInput{
@@ -122,19 +111,12 @@ func (s *PaymentService) SubmitPaymentReceipt(ctx context.Context, input *models
 		return nil, errdefs.ErrNotFound
 	}
 
-	if receipt == nil {
-		return nil, errdefs.InternalError
-	}
-
 	// отправить ивент уведомление
 
 	return receipt, nil
 }
 
 func (s *PaymentService) GetPaymentInfo(ctx context.Context, input *models.GetPaymentInfoInput) (*models.PaymentInfo, error) {
-	if input == nil {
-		return nil, errdefs.ErrInvalidArgument
-	}
 	if input.LessonId == uuid.Nil {
 		return nil, errdefs.ErrInvalidArgument
 	}
@@ -149,20 +131,13 @@ func (s *PaymentService) GetPaymentInfo(ctx context.Context, input *models.GetPa
 	if err != nil {
 		return nil, err
 	}
-	priceRub := int32(0)
-	if lesson.PriceRub != nil {
-		priceRub = *lesson.PriceRub
+	if *lesson.PriceRub == 0 {
+		*lesson.PriceRub = 0
 	}
-
-	paymentDetails := ""
-	if lesson.PaymentInfo != nil {
-		paymentDetails = *lesson.PaymentInfo
-	}
-
 	paymentInfo := &models.PaymentInfo{
 		LessonID:       input.LessonId,
-		PriceRUB:       priceRub,
-		PaymentDetails: paymentDetails,
+		PriceRUB:       *lesson.PriceRub,
+		PaymentDetails: *lesson.PaymentInfo,
 	}
 	return paymentInfo, nil
 }
@@ -187,12 +162,8 @@ func (s *PaymentService) VerifyReceipt(ctx context.Context, input *models.Verify
 	receipt, err := retry(ctx, maxRetries, retryDelay, func() (*models.PaymentReceipt, error) {
 		return s.repo.UpdateReceipt(ctx, input.ReceiptId, true)
 	})
-
 	if err != nil {
 		return nil, err
-	}
-	if receipt == nil {
-		return nil, errdefs.InternalError
 	}
 	return receipt, nil
 }
@@ -212,14 +183,8 @@ func (s *PaymentService) GetReceiptFile(ctx context.Context, input *models.GetRe
 	if err != nil {
 		return nil, err
 	}
-	if url == nil {
-		return nil, errdefs.InternalError
-	}
 	receiptFileURL := &models.ReceiptFileUrl{
 		URL: url.GetUrl(),
-	}
-	if receiptFileURL == nil {
-		return nil, errdefs.ErrNotFound
 	}
 	return receiptFileURL, nil
 }

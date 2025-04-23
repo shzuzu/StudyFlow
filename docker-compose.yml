@@ -95,15 +95,15 @@ services:
       dockerfile: ./user_service/Dockerfile
     expose:
       - "50051"
-    env_file:
-      - ./user_service/config/.env
+
     environment:
       GRPC_PORT: 50051
       POSTGRES_URL: postgres://postgres:postgres@user-db:5432/postgres?sslmode=disable
       POSTGRES_MAX_CONN: 5
       POSTGRES_MIN_CONN: 1
       POSTGRES_AUTO_MIGRATE: true
-      TELEGRAM_SECRET: ${TELEGRAM_SECRET}
+      TELEGRAM_SECRET: nigger
+
 
   file-service:
     build:
@@ -111,8 +111,6 @@ services:
       dockerfile: ./file_service/Dockerfile
     expose:
       - "50051"
-    env_file:
-      - ./file_service/config/.env
     environment:
       GRPC_PORT: 50051
       POSTGRES_URL: postgres://postgres:postgres@file-db:5432/postgres?sslmode=disable
@@ -165,8 +163,6 @@ services:
       dockerfile: ./schedule_service/Dockerfile
     expose:
       - "50051"
-    env_file:
-      - ./schedule_service/.env
     environment:
       GRPC_PORT: 50051
       POSTGRES_URL: postgres://postgres:postgres@schedule-db:5432/postgres?sslmode=disable

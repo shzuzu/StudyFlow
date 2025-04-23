@@ -5,6 +5,7 @@ go 1.24.2
 require (
 	common_library v0.0.0-00010101000000-000000000000
 	fileservice v0.0.0-00010101000000-000000000000
+	github.com/aws/smithy-go v1.22.2
 	github.com/georgysavva/scany/v2 v2.1.4
 	github.com/golang-migrate/migrate/v4 v4.18.2
 	github.com/google/uuid v1.6.0
