@@ -15,6 +15,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"paymentservice/internal/clients"
 	"paymentservice/internal/config"
 	"paymentservice/internal/data"
 	"paymentservice/internal/db"
@@ -75,13 +76,18 @@ func main() {
 		}
 	}(conn)
 
-	userConn, err := grpc.NewClient("user-service:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	fileConn, err := grpc.NewClient("file-service:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	scheduleConn, err := grpc.NewClient("schedule-service:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	userGrpcClient, closeFunc := clients.New(ctx, cfg.UserServiceURL)
+	defer closeFunc()
 
-	userClient := api.NewUserServiceClient(userConn)
-	fileClient := api2.NewFileServiceClient(fileConn)
-	scheduleClient := api3.NewScheduleServiceClient(scheduleConn)
+	fileGrpcClient, closeFunc := clients.New(ctx, cfg.FileServiceURL)
+	defer closeFunc()
+
+	scheduleGrpcClient, closeFunc := clients.New(ctx, cfg.ScheduleServiceURL)
+	defer closeFunc()
+
+	userClient := api.NewUserServiceClient(userGrpcClient)
+	fileClient := api2.NewFileServiceClient(fileGrpcClient)
+	scheduleClient := api3.NewScheduleServiceClient(scheduleGrpcClient)
 
 	paymentService := service.NewPaymentService(paymentRepo, userClient, fileClient, scheduleClient)
 

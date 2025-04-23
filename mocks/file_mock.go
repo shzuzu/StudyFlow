@@ -10,8 +10,8 @@
 package mocks
 
 import (
+	api "/fileservice/pkg/api"
 	context "context"
-	api "fileservice/pkg/api"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"

@@ -12,6 +12,9 @@ type Config struct {
 	PostgresMaxConn     int32  `env:"POSTGRES_MAX_CONN" env-default:"5"`
 	PostgresMinConn     int32  `env:"POSTGRES_MIN_CONN" env-default:"1"`
 	PostgresAutoMigrate bool   `env:"POSTGRES_AUTO_MIGRATE" env-default:"true"`
+	UserServiceURL      string `env:"USER_CLIENT_URL"`
+	FileServiceURL      string `env:"FILE_SERVICE_URL"`
+	ScheduleServiceURL  string `env:"SCHEDULE_SERVICE_URL"`
 }
 
 func New() (*Config, error) {
