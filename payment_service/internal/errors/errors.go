@@ -8,4 +8,5 @@ var (
 	ErrNotFound         = errors.New("not found")
 	ErrInvalidPayment   = errors.New("invalid payment")
 	ErrAlreadyExists    = errors.New("user already exists")
+	InternalError       = errors.New("internal error")
 )
