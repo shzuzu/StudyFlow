@@ -1,9 +1,9 @@
 services:
   minio:
     image: quay.io/minio/minio
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+    expose:
+      - "9000"
+      - "9001"
 
     environment:
       MINIO_ROOT_USER: ROOTUSER
@@ -144,8 +144,8 @@ services:
     build:
       context: .
       dockerfile: ./payment_service/Dockerfile
-    ports:
-      - "50054:50051"
+    expose:
+      - "50051"
     environment:
       GRPC_PORT: 50051
       POSTGRES_URL: postgres://postgres:postgres@schedule-db:5432/postgres?sslmode=disable
