@@ -11,6 +11,7 @@ require (
 	google.golang.org/grpc v1.72.0
 	google.golang.org/protobuf v1.36.6
 	homework_service v0.0.0-00010101000000-000000000000
+	paymentservice v0.0.0-00010101000000-000000000000
 	schedule_service v0.0.0-00010101000000-000000000000
 	userservice v0.0.0
 )
@@ -31,6 +32,7 @@ replace (
 	common_library => ../common_library
 	fileservice => ../file_service
 	homework_service => ../homework_service
+	paymentservice => ../payment_service
 	schedule_service => ../schedule_service
 	userservice => ../user_service
 )
