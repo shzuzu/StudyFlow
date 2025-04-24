@@ -7,6 +7,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"log"
 	"paymentservice/internal/config"
 )
 
@@ -51,6 +52,6 @@ func runMigrations(cfg *config.Config) error {
 	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return err
 	}
-
+	log.Default().Println("Migrations successfully applied")
 	return nil
 }

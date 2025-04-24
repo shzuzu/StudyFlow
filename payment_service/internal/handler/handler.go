@@ -74,7 +74,10 @@ func (h *PaymentServiceServer) SubmitPaymentReceipt(ctx context.Context, req *pb
 	}
 	paymentReceipt, err := h.service.SubmitPaymentReceipt(ctx, input)
 	if err != nil {
-		return nil, mapError(err, errdefs.ErrNotFound, errdefs.ErrPermissionDenied, errdefs.ErrInvalidArgument)
+		if logger, ok := logging.GetFromContext(ctx); ok {
+			logger.Error(ctx, "failed to submit payment receipt", zap.Any("input", input), zap.Error(err))
+		}
+		return nil, mapError(err, errdefs.ErrNotFound, errdefs.ErrPermissionDenied, errdefs.ErrInvalidArgument, errdefs.ErrAlreadyExists)
 	}
 	return toPbReceipt(paymentReceipt), nil
 }

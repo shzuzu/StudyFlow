@@ -83,6 +83,9 @@ services:
       timeout: 10s
       retries: 5
 
+    ports:
+      - "5434:5432"
+
   schedule-db:
     image: postgres:latest
     expose:
@@ -157,7 +160,7 @@ services:
       - "50051"
     environment:
       GRPC_PORT: 50051
-      POSTGRES_URL: postgres://postgres:postgres@schedule-db:5432/postgres?sslmode=disable
+      POSTGRES_URL: postgres://postgres:postgres@payment-db:5432/postgres?sslmode=disable
       POSTGRES_MAX_CONN: 5
       POSTGRES_MIN_CONN: 1
       POSTGRES_AUTO_MIGRATE: true
