@@ -20,6 +20,11 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+type IUserClient interface {
+	Close()
+	GetTutorStudent(ctx context.Context, tutorID, studentID string) (*userpb.TutorStudent, error)
+}
+
 type UserClient struct {
 	conn   *grpc.ClientConn
 	client userpb.UserServiceClient
