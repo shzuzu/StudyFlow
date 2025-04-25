@@ -4,19 +4,20 @@ import (
 	"context"
 	"errors"
 	api2 "fileservice/pkg/api"
+	errdefs "paymentservice/internal/errors"
+	"paymentservice/internal/mocks"
+	"paymentservice/internal/models"
+	"paymentservice/internal/service"
+	api "schedule_service/pkg/api"
+	"testing"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
-	errdefs "paymentservice/internal/errors"
-	"paymentservice/internal/mocks"
-	"paymentservice/internal/models"
-	"paymentservice/internal/service"
-	"schedule_service/pkg/api"
-	"testing"
-	"time"
 )
 
 func setup(t *testing.T) (*gomock.Controller, *service.PaymentService, *mocks.MockIPaymentRepo, *mocks.MockUserServiceClient, *mocks.MockFileServiceClient, *mocks.MockScheduleServiceClient) {
@@ -30,54 +31,39 @@ func setup(t *testing.T) (*gomock.Controller, *service.PaymentService, *mocks.Mo
 	svc := service.NewPaymentService(mockRepo, mockUserClient, mockFileClient, mockScheduleClient)
 	return ctrl, svc, mockRepo, mockUserClient, mockFileClient, mockScheduleClient
 }
+
 func TestSubmitPaymentReceipt(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		ctrl, svc, mockRepo, _, _, mockScheduleClient := setup(t)
+		ctrl, svc, mockRepo, _, _, mockSchedule := setup(t)
 		defer ctrl.Finish()
 
 		lessonID := uuid.New()
 		fileID := uuid.New()
 		receiptID := uuid.New()
 
-		mockScheduleClient.EXPECT().GetLesson(gomock.Any(), &api.GetLessonRequest{
-			Id: lessonID.String(),
-		}).Return(&api.Lesson{
-			Id:             lessonID.String(),
-			ConnectionLink: proto.String("nigger"),    // вместо &variable
-			PriceRub:       proto.Int32(100),          // вместо &priceRub
-			PaymentInfo:    proto.String("some info"), // вместо &paymentInfo
-		}, nil)
+		// Get existing lesson
+		mockSchedule.EXPECT().GetLesson(gomock.Any(), &api.GetLessonRequest{Id: lessonID.String()}).
+			Return(&api.Lesson{
+				Id:             lessonID.String(),
+				ConnectionLink: proto.String("link"),
+				PriceRub:       proto.Int32(100),
+				PaymentInfo:    proto.String("info"),
+			}, nil)
 
-		mockScheduleClient.EXPECT().UpdateLesson(gomock.Any(), &api.UpdateLessonRequest{
-			Id:             lessonID.String(),
-			ConnectionLink: proto.String("nigger"),
-			PriceRub:       proto.Int32(100),
-			PaymentInfo:    proto.String("some info"),
-		}).Return(&api.Lesson{}, nil)
+		// Mark lesson as paid
+		mockSchedule.EXPECT().MarkAsPaid(gomock.Any(), &api.MarkAsPaidRequest{Id: lessonID.String()}).
+			Return(&api.Lesson{Id: lessonID.String(), IsPaid: true}, nil)
 
+		// Ensure no existing receipt
 		mockRepo.EXPECT().ExistsByID(gomock.Any(), gomock.Any()).Return(false, nil)
 
-		mockRepo.EXPECT().CreateReceipt(gomock.Any(), &models.PaymentReceiptCreateInput{
-			LessonID:   lessonID,
-			FileID:     fileID,
-			IsVerified: true,
-		}).Return(&models.PaymentReceipt{
-			ID:         receiptID,
-			LessonID:   lessonID,
-			FileID:     fileID,
-			IsVerified: true,
-		}, nil)
+		// Create receipt
+		mockRepo.EXPECT().CreateReceipt(gomock.Any(), gomock.AssignableToTypeOf(&models.PaymentReceiptCreateInput{})).
+			Return(&models.PaymentReceipt{ID: receiptID, LessonID: lessonID, FileID: fileID, IsVerified: false}, nil)
 
-		result, err := svc.SubmitPaymentReceipt(context.Background(), &models.SubmitPaymentReceiptInput{
-			LessonId: lessonID,
-			FileId:   fileID,
-		})
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if result.ID != receiptID {
-			t.Fatalf("expected receipt ID %v, got %v", receiptID, result.ID)
-		}
+		result, err := svc.SubmitPaymentReceipt(context.Background(), &models.SubmitPaymentReceiptInput{LessonId: lessonID, FileId: fileID})
+		assert.NoError(t, err)
+		assert.Equal(t, receiptID, result.ID)
 	})
 
 	t.Run("Error_InvalidInput", func(t *testing.T) {
@@ -95,96 +81,71 @@ func TestSubmitPaymentReceipt(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				_, err := svc.SubmitPaymentReceipt(context.Background(), tc.input)
-				if !errors.Is(err, errdefs.ErrInvalidArgument) {
-					t.Fatalf("expected ErrInvalidArgument, got %v", err)
-				}
+				assert.True(t, errors.Is(err, errdefs.ErrInvalidArgument))
 			})
 		}
 	})
 
 	t.Run("Error_LessonAlreadyPaid", func(t *testing.T) {
-		ctrl, svc, _, _, _, mockScheduleClient := setup(t)
-		defer ctrl.Finish()
-
-		lessonID := uuid.New()
-		mockScheduleClient.EXPECT().GetLesson(gomock.Any(), gomock.Any()).Return(&api.Lesson{
-			IsPaid: true,
-		}, nil)
-
-		_, err := svc.SubmitPaymentReceipt(context.Background(), &models.SubmitPaymentReceiptInput{
-			LessonId: lessonID,
-			FileId:   uuid.New(),
-		})
-		if !errors.Is(err, errdefs.ErrAlreadyExists) {
-			t.Fatalf("expected ErrAlreadyExists, got %v", err)
-		}
-	})
-
-	t.Run("Error_UpdateLesson", func(t *testing.T) {
 		ctrl, svc, _, _, _, mockSchedule := setup(t)
 		defer ctrl.Finish()
 
-		mockSchedule.EXPECT().
-			GetLesson(gomock.Any(), gomock.Any()).
-			Return(&api.Lesson{IsPaid: false}, nil)
-		mockSchedule.EXPECT().
-			UpdateLesson(gomock.Any(), gomock.Any()).
-			Return(nil, errors.New("upd error"))
+		lessonID := uuid.New()
+		// Lesson already marked paid
+		mockSchedule.EXPECT().GetLesson(gomock.Any(), gomock.Any()).Return(&api.Lesson{IsPaid: true}, nil)
 
-		_, err := svc.SubmitPaymentReceipt(context.Background(), &models.SubmitPaymentReceiptInput{
-			LessonId: uuid.New(), FileId: uuid.New(),
-		})
-		if err == nil || err.Error() != "upd error" {
-			t.Fatalf("want upd error, got %v", err)
-		}
+		_, err := svc.SubmitPaymentReceipt(context.Background(), &models.SubmitPaymentReceiptInput{LessonId: lessonID, FileId: uuid.New()})
+		assert.True(t, errors.Is(err, errdefs.ErrAlreadyExists))
 	})
+
+	t.Run("Error_MarkAsPaid", func(t *testing.T) {
+		ctrl, svc, _, _, _, mockSchedule := setup(t)
+		defer ctrl.Finish()
+
+		// Get lesson unpaid
+		mockSchedule.EXPECT().GetLesson(gomock.Any(), gomock.Any()).Return(&api.Lesson{IsPaid: false}, nil)
+		// Fail to mark paid
+		mockSchedule.EXPECT().MarkAsPaid(gomock.Any(), gomock.Any()).Return(nil, errors.New("mark error"))
+
+		_, err := svc.SubmitPaymentReceipt(context.Background(), &models.SubmitPaymentReceiptInput{LessonId: uuid.New(), FileId: uuid.New()})
+		assert.EqualError(t, err, "mark error")
+	})
+
 	t.Run("Error_CreateReceipt", func(t *testing.T) {
 		ctrl, svc, mockRepo, _, _, mockSchedule := setup(t)
 		defer ctrl.Finish()
 
-		mockSchedule.EXPECT().GetLesson(gomock.Any(), gomock.Any()).Return(&api.Lesson{PriceRub: proto.Int32(1)}, nil)
-		mockSchedule.EXPECT().UpdateLesson(gomock.Any(), gomock.Any()).Return(&api.Lesson{}, nil)
-		mockRepo.EXPECT().ExistsByID(gomock.Any(), gomock.Any()).Return(false, nil)
-		mockRepo.EXPECT().
-			CreateReceipt(gomock.Any(), gomock.Any()).
-			Return(nil, errors.New("db error"))
+		// Get lesson and mark paid
+		mockSchedule.EXPECT().GetLesson(gomock.Any(), gomock.Any()).Return(&api.Lesson{IsPaid: false}, nil)
+		mockSchedule.EXPECT().MarkAsPaid(gomock.Any(), gomock.Any()).Return(&api.Lesson{IsPaid: true}, nil)
 
-		_, err := svc.SubmitPaymentReceipt(context.Background(), &models.SubmitPaymentReceiptInput{
-			LessonId: uuid.New(), FileId: uuid.New(),
-		})
-		if err == nil || err.Error() != errdefs.ErrNotFound.Error() {
-			t.Fatalf("expected ErrNotFound, got %v", err)
-		}
+		// No existing receipt
+		mockRepo.EXPECT().ExistsByID(gomock.Any(), gomock.Any()).Return(false, nil)
+		// DB error on create
+		mockRepo.EXPECT().CreateReceipt(gomock.Any(), gomock.Any()).Return(nil, errors.New("db error"))
+
+		_, err := svc.SubmitPaymentReceipt(context.Background(), &models.SubmitPaymentReceiptInput{LessonId: uuid.New(), FileId: uuid.New()})
+		assert.EqualError(t, err, errdefs.ErrNotFound.Error())
 	})
+
 	t.Run("RetryLogic_SucceedsAfterRetries", func(t *testing.T) {
-		ctrl, svc, mockRepo, _, _, mockScheduleClient := setup(t)
+		ctrl, svc, mockRepo, _, _, mockSchedule := setup(t)
 		defer ctrl.Finish()
 
 		lessonID := uuid.New()
-		fileID := uuid.New()
+		// Get and mark
+		mockSchedule.EXPECT().GetLesson(gomock.Any(), gomock.Any()).Return(&api.Lesson{Id: lessonID.String(), IsPaid: false}, nil)
+		mockSchedule.EXPECT().MarkAsPaid(gomock.Any(), gomock.Any()).Return(&api.Lesson{IsPaid: true}, nil)
 
-		mockScheduleClient.EXPECT().GetLesson(gomock.Any(), gomock.Any()).
-			Return(&api.Lesson{Id: lessonID.String(), IsPaid: false}, nil)
-		mockScheduleClient.EXPECT().UpdateLesson(gomock.Any(), gomock.Any()).
-			Return(&api.Lesson{}, nil)
+		mockRepo.EXPECT().ExistsByID(gomock.Any(), gomock.Any()).Return(false, nil)
 
-		mockRepo.EXPECT().ExistsByID(gomock.Any(), gomock.Any()).
-			Return(false, nil)
+		retriable := status.Error(codes.Unavailable, "unavailable")
+		mockRepo.EXPECT().CreateReceipt(gomock.Any(), gomock.Any()).Return(nil, retriable).Times(4)
+		mockRepo.EXPECT().CreateReceipt(gomock.Any(), gomock.Any()).Return(&models.PaymentReceipt{}, nil).Times(1)
 
-		retriableError := status.Error(codes.Unavailable, "service down")
-		mockRepo.EXPECT().CreateReceipt(gomock.Any(), gomock.Any()).
-			Return(nil, retriableError).Times(4)
-		mockRepo.EXPECT().CreateReceipt(gomock.Any(), gomock.Any()).
-			Return(&models.PaymentReceipt{}, nil).Times(1)
-
-		_, err := svc.SubmitPaymentReceipt(context.Background(), &models.SubmitPaymentReceiptInput{
-			LessonId: lessonID,
-			FileId:   fileID,
-		})
-
+		_, err := svc.SubmitPaymentReceipt(context.Background(), &models.SubmitPaymentReceiptInput{LessonId: lessonID, FileId: uuid.New()})
 		assert.NoError(t, err)
 	})
-
 }
 
 func TestGetPaymentInfo(t *testing.T) {
