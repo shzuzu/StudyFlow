@@ -58,7 +58,7 @@ test_schedule_service:
 
 build_services:
   stage: build
-  needs: ["test_payment_service", "test_schedule_service"]
+  # needs: ["test_payment_service", "test_schedule_service"]
   parallel: 3
   script:
     - docker compose build --parallel
