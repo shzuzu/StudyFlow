@@ -61,6 +61,7 @@ build_services:
   needs: ["test_payment_service", "test_schedule_service"]
   parallel: 3
   script:
+    - unset DOCKER_HOST
     - docker compose build --parallel
   artifacts:
     paths:
