@@ -36,8 +36,8 @@ test_payment_service:
       else
         echo "[PASS]: ✅ Coverage check passed"
       fi
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  # rules:
+  #   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 test_schedule_service:
   stage: test
@@ -54,8 +54,8 @@ test_schedule_service:
       else
         echo "[PASS]: ✅ Coverage check passed"
       fi
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  # rules:
+  #   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 build_services:
   stage: build
