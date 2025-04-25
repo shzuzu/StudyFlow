@@ -18,10 +18,10 @@ import (
 type ScheduleServer struct {
 	pb.UnimplementedScheduleServiceServer
 	db         repo.Repository
-	UserClient *UserClient
+	UserClient IUserClient
 }
 
-func NewScheduleServer(db repo.Repository, client *UserClient) *ScheduleServer {
+func NewScheduleServer(db repo.Repository, client IUserClient) *ScheduleServer {
 	return &ScheduleServer{
 		db:         db,
 		UserClient: client,

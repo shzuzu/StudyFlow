@@ -7,7 +7,6 @@ toolchain go1.24.2
 require (
 	common_library v0.0.0-00010101000000-000000000000
 	github.com/golang-migrate/migrate/v4 v4.18.2
-	github.com/golang/mock v1.1.1
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
