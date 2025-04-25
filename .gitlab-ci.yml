@@ -1,55 +1,57 @@
-image: tmaier/docker-compose:latest
+image: golang:1.24-alpine
+
 services:
-  - docker:dind
+  - docker:latest
 
 variables:
+  DOCKER_HOST: "unix:///var/run/docker.sock"
   CGO_ENABLED: "1"
   GOOS: "linux"
   TELEGRAM_SECRET: "anxious-secret-value"
 
-# before_script:
-#   - apk add --no-cache docker-cli docker-cli-compose build-base
-#   - docker --version
-#   - docker compose version
+before_script:
+  - apk add --no-cache docker-cli docker-cli-compose build-base
+  - docker --version
+  - docker compose version
 
-# stages:
-#   - test
-#   - build
+stages:
+  - test
+  - build
 
-# test_payment_service:
-#   stage: test
-#   script:
-#     - cd payment_service/internal/service
-#     - |
-#       echo "[INFO]: 🚀Running tests with coverage check..."
-#       coverage=$(go test -cover ./... | grep -E 'coverage:.*%' | awk '{gsub(/%/,"",$5); print $5}')
-#       echo "[INFO]: 📒Actual test coverage: ${coverage}%"
-#       if [ $(echo "$coverage < 30" | bc -l) -eq 1 ]; then
-#         echo "[ERROR]: Coverage ${coverage}% is below 30% threshold"
-#         exit 1
-#       else
-#         echo "[PASS]: ✅ Coverage check passed"
-#       fi
+test_payment_service:
+  stage: test
+  script:
+    - cd payment_service/internal/service
+    - |
+      echo "[INFO]: 🚀Running tests with coverage check..."
+      coverage=$(go test -cover ./... | grep -E 'coverage:.*%' | awk '{gsub(/%/,"",$5); print $5}')
+      echo "[INFO]: 📒Actual test coverage: ${coverage}%"
+      if [ $(echo "$coverage < 30" | bc -l) -eq 1 ]; then
+        echo "[ERROR]: Coverage ${coverage}% is below 30% threshold"
+        exit 1
+      else
+        echo "[PASS]: ✅ Coverage check passed"
+      fi
 
-# test_schedule_service:
-#   stage: test
-#   script:
-#     - cd schedule_service/internal/service/service
-#     - |
-#       echo "[INFO]: 🚀Running tests with coverage check..."
-#       coverage=$(go test -cover ./... | grep -E 'coverage:.*%' | awk '{gsub(/%/,"",$5); print $5}')
-#       echo "[INFO]: 📒Actual test coverage: ${coverage}%"
-#       if [ $(echo "$coverage < 30" | bc -l) -eq 1 ]; then
-#         echo "[ERROR]: Coverage ${coverage}% is below 30% threshold"
-#         exit 1
-#       else
-#         echo "[PASS]: ✅ Coverage check passed"
-#       fi
+test_schedule_service:
+  stage: test
+  script:
+    - cd schedule_service/internal/service/service
+    - |
+      echo "[INFO]: 🚀Running tests with coverage check..."
+      coverage=$(go test -cover ./... | grep -E 'coverage:.*%' | awk '{gsub(/%/,"",$5); print $5}')
+      echo "[INFO]: 📒Actual test coverage: ${coverage}%"
+      if [ $(echo "$coverage < 30" | bc -l) -eq 1 ]; then
+        echo "[ERROR]: Coverage ${coverage}% is below 30% threshold"
+        exit 1
+      else
+        echo "[PASS]: ✅ Coverage check passed"
+      fi
 
 build_services:
   stage: build
   script:
-    - docker-compose up -d
+    - docker compose build --parallel
   artifacts:
     paths:
       - ./*/Dockerfile
