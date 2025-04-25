@@ -19,7 +19,6 @@ before_script:
   - apk add --no-cache docker-cli docker-cli-compose build-base
   - docker --version
   - docker compose version
-  - docker info || (echo "[ERROR]: Docker daemon not reachable" && exit 1)
 
 test_payment_service:
   stage: test
