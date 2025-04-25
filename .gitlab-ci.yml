@@ -1,15 +1,15 @@
-image: docker:latest
+image: golang:1.24-alpine
 
 services:
-  - name: docker:latest-dind
-    alias: docker
+  - docker:dind
+
 stages:
   - test
   - build
 
 variables:
-  DOCKER_TLS_CERTDIR: ""
-  DOCKER_HOST: tcp://docker:2375
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
   COMPOSE_VERSION: "v2.23.0"
   CGO_ENABLED: "1"
   GOOS: "linux"
@@ -35,8 +35,8 @@ test_payment_service:
       else
         echo "[PASS]: ✅ Coverage check passed"
       fi
-  # rules:
-  #   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 test_schedule_service:
   stage: test
@@ -53,22 +53,18 @@ test_schedule_service:
       else
         echo "[PASS]: ✅ Coverage check passed"
       fi
-  # rules:
-  #   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 build_services:
   stage: build
+  needs: ["test_payment_service", "test_schedule_service"]
+  parallel: 3
   script:
     - docker compose build --parallel
-# build_services:
-#   stage: build
-#   # needs: ["test_payment_service", "test_schedule_service"]
-#   parallel: 3
-#   script:
-#     - docker compose build --parallel
-#   artifacts:
-#     paths:
-#       - ./*/Dockerfile
-#     expire_in: 1 week
-#   # rules:
-#   #   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  artifacts:
+    paths:
+      - ./*/Dockerfile
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
