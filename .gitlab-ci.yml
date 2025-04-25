@@ -1,15 +1,15 @@
-image: golang:1.24-alpine
+image: docker:latest
 
 services:
-  - docker:dind
-
+  - name: docker:latest-dind
+    alias: docker
 stages:
   - test
   - build
 
 variables:
-  DOCKER_HOST: tcp://docker:2376
-  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://docker:2375
   COMPOSE_VERSION: "v2.23.0"
   CGO_ENABLED: "1"
   GOOS: "linux"
@@ -19,6 +19,7 @@ before_script:
   - apk add --no-cache docker-cli docker-cli-compose build-base
   - docker --version
   - docker compose version
+  - docker info || (echo "[ERROR]: Docker daemon not reachable" && exit 1)
 
 test_payment_service:
   stage: test
@@ -58,13 +59,31 @@ test_schedule_service:
 
 build_services:
   stage: build
-  # needs: ["test_payment_service", "test_schedule_service"]
-  parallel: 3
   script:
     - docker compose build --parallel
-  artifacts:
-    paths:
-      - ./*/Dockerfile
-    expire_in: 1 week
-  # rules:
-  #   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+default:
+  image: golang:1.24-alpine
+  services:
+    - docker:24.0.2-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
+  before_script:
+    - apk add --no-cache docker-cli docker-cli-compose build-base
+  tags:
+    - docker
+  interruptible: true
+  retry: 2
+# build_services:
+#   stage: build
+#   # needs: ["test_payment_service", "test_schedule_service"]
+#   parallel: 3
+#   script:
+#     - docker compose build --parallel
+#   artifacts:
+#     paths:
+#       - ./*/Dockerfile
+#     expire_in: 1 week
+#   # rules:
+#   #   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
