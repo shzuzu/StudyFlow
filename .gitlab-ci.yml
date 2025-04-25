@@ -4,7 +4,6 @@ services:
   - docker:latest
 
 variables:
-  DOCKER_HOST: "unix:///var/run/docker.sock"
   CGO_ENABLED: "1"
   GOOS: "linux"
   TELEGRAM_SECRET: "anxious-secret-value"
@@ -51,7 +50,7 @@ test_schedule_service:
 build_services:
   stage: build
   script:
-    - docker compose build --parallel
+    - docker-compose up -d
   artifacts:
     paths:
       - ./*/Dockerfile
