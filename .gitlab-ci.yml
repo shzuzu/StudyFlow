@@ -1,15 +1,17 @@
 image: golang:1.24-alpine
 
 services:
-  - docker:dind
+  - name: docker:dind
+    command: ["--tls=false"]
 
 stages:
   - test
   - build
 
 variables:
-  DOCKER_HOST: tcp://docker:2376
-  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_VERIFY: "0"
+  DOCKER_TLS_CERTDIR: ""
   COMPOSE_VERSION: "v2.23.0"
   CGO_ENABLED: "1"
   GOOS: "linux"
@@ -17,8 +19,18 @@ variables:
 
 before_script:
   - apk add --no-cache docker-cli docker-cli-compose build-base
-  - docker --version
+  - docker info
   - docker compose version
+  - |
+    echo "Waiting for Docker to start..."
+    for i in $(seq 1 30); do
+      if docker info > /dev/null 2>&1; then
+        echo "Docker is up and running!"
+        break
+      fi
+      echo "Waiting for Docker to start... ($i/30)"
+      sleep 1
+    done
 
 test_payment_service:
   stage: test
@@ -59,7 +71,6 @@ test_schedule_service:
 build_services:
   stage: build
   needs: ["test_payment_service", "test_schedule_service"]
-  parallel: 3
   script:
     - docker compose build --parallel
   artifacts:
