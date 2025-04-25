@@ -61,20 +61,6 @@ build_services:
   stage: build
   script:
     - docker compose build --parallel
-
-default:
-  image: golang:1.24-alpine
-  services:
-    - docker:24.0.2-dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_HOST: tcp://docker:2375
-  before_script:
-    - apk add --no-cache docker-cli docker-cli-compose build-base
-  tags:
-    - docker
-  interruptible: true
-  retry: 2
 # build_services:
 #   stage: build
 #   # needs: ["test_payment_service", "test_schedule_service"]
