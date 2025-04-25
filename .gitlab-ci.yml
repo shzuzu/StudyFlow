@@ -1,5 +1,8 @@
 image: golang:1.24-alpine
 
+services:
+  - docker:dind
+
 stages:
   - test
   - build
@@ -10,6 +13,7 @@ variables:
   COMPOSE_VERSION: "v2.23.0"
   CGO_ENABLED: "1"
   GOOS: "linux"
+  TELEGRAM_SECRET: "anxious-secret-value"
 
 before_script:
   - apk add --no-cache docker-cli docker-cli-compose build-base
@@ -21,15 +25,15 @@ test_payment_service:
   script:
     - cd payment_service/internal/service
     - |
-      echo "Running tests with coverage check..."
+      echo "[INFO]: 🚀Running tests with coverage check..."
       coverage=$(go test -cover ./... | grep -E 'coverage:.*%' | awk '{gsub(/%/,"",$5); print $5}')
-      echo "Actual test coverage: ${coverage}%"
+      echo "[INFO]: 📒Actual test coverage: ${coverage}%"
 
       if [ $(echo "$coverage < 30" | bc -l) -eq 1 ]; then
-        echo "ERROR: Coverage ${coverage}% is below 30% threshold"
+        echo "[ERROR]: Coverage ${coverage}% is below 30% threshold"
         exit 1
       else
-        echo "✅ Coverage check passed"
+        echo "[PASS]: ✅ Coverage check passed"
       fi
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
@@ -39,15 +43,15 @@ test_schedule_service:
   script:
     - cd schedule_service/internal/service/service
     - |
-      echo "Running tests with coverage check..."
+      echo "[INFO]: 🚀Running tests with coverage check..."
       coverage=$(go test -cover ./... | grep -E 'coverage:.*%' | awk '{gsub(/%/,"",$5); print $5}')
-      echo "Actual test coverage: ${coverage}%"
+      echo "[INFO]: 📒Actual test coverage: ${coverage}%"
 
       if [ $(echo "$coverage < 30" | bc -l) -eq 1 ]; then
-        echo "ERROR: Coverage ${coverage}% is below 30% threshold"
+        echo "[ERROR]: Coverage ${coverage}% is below 30% threshold"
         exit 1
       else
-        echo "✅ Coverage check passed"
+        echo "[PASS]: ✅ Coverage check passed"
       fi
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
