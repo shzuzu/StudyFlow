@@ -13,6 +13,8 @@ type Config struct {
 	ScheduleServiceURL string `env:"SCHEDULE_SERVICE_URL"`
 	HomeworkServiceURL string `env:"HOMEWORK_SERVICE_URL"`
 	PaymentServiceURL  string `env:"PAYMENT_SERVICE_URL"`
+	MinioURL           string `env:"MINIO_URL"`
+	RedisURL           string `env:"REDIS_URL"`
 }
 
 func New() (*Config, error) {

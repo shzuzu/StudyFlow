@@ -14,6 +14,15 @@ services:
     volumes:
       - minio_data:/data
 
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    expose:
+      - '6379'
+    command: redis-server --save 20 1
+    volumes:
+      - cache:/data
+
   user-db:
     image: postgres:latest
     expose:
@@ -74,6 +83,9 @@ services:
       timeout: 10s
       retries: 5
 
+    ports:
+      - "5434:5432"
+
   schedule-db:
     image: postgres:latest
     expose:
@@ -95,15 +107,13 @@ services:
       dockerfile: ./user_service/Dockerfile
     expose:
       - "50051"
-
     environment:
       GRPC_PORT: 50051
       POSTGRES_URL: postgres://postgres:postgres@user-db:5432/postgres?sslmode=disable
       POSTGRES_MAX_CONN: 5
       POSTGRES_MIN_CONN: 1
       POSTGRES_AUTO_MIGRATE: true
-      TELEGRAM_SECRET: nigger
-
+      TELEGRAM_SECRET: ${TELEGRAM_SECRET}
 
   file-service:
     build:
@@ -121,6 +131,7 @@ services:
       S3_SECRET_ACCESS_KEY: PASSWORD
       S3_ENDPOINT: http://minio:9000
       S3_REGION: us-east-1
+      GATEWAY_PUBLIC_URL: http://localhost:8080
 
   homework-service:
     build:
@@ -145,11 +156,11 @@ services:
     build:
       context: .
       dockerfile: ./payment_service/Dockerfile
-    ports:
-      - "50054:50051"
+    expose:
+      - "50051"
     environment:
       GRPC_PORT: 50051
-      POSTGRES_URL: postgres://postgres:postgres@schedule-db:5432/postgres?sslmode=disable
+      POSTGRES_URL: postgres://postgres:postgres@payment-db:5432/postgres?sslmode=disable
       POSTGRES_MAX_CONN: 5
       POSTGRES_MIN_CONN: 1
       POSTGRES_AUTO_MIGRATE: true
@@ -186,6 +197,17 @@ services:
       SCHEDULE_SERVICE_URL: "schedule-service:50051"
       HOMEWORK_SERVICE_URL: "homework-service:50051"
       PAYMENT_SERVICE_URL: "payment-service:50051"
+      MINIO_URL: "http://minio:9000"
+      REDIS_URL: "cache:6379"
+
+  nginx:
+    image: nginx:latest
+    depends_on:
+      - api-gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./ngnix/default.conf:/etc/nginx/conf.d/default.conf:ro
 
 
 volumes:
@@ -195,3 +217,5 @@ volumes:
   homework-db:
   payment-db:
   schedule-db:
+  cache:
+    driver: local

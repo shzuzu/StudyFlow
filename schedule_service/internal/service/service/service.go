@@ -18,10 +18,10 @@ import (
 type ScheduleServer struct {
 	pb.UnimplementedScheduleServiceServer
 	db         repo.Repository
-	UserClient *UserClient
+	UserClient IUserClient
 }
 
-func NewScheduleServer(db repo.Repository, client *UserClient) *ScheduleServer {
+func NewScheduleServer(db repo.Repository, client IUserClient) *ScheduleServer {
 	return &ScheduleServer{
 		db:         db,
 		UserClient: client,
@@ -585,4 +585,26 @@ func (s *ScheduleServer) ListCompletedUnpaidLessons(ctx context.Context, req *pb
 	}
 
 	return createListLessonsResponse(lessons), nil
+}
+
+func (s *ScheduleServer) MarkAsPaid(ctx context.Context, req *pb.MarkAsPaidRequest) (*pb.Lesson, error) {
+	if err := uuid.Validate(req.Id); err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid ID")
+	}
+
+	lesson, err := s.db.GetLesson(ctx, req.Id)
+	if err != nil {
+		if errors.Is(err, ErrLessonNotFound) {
+			return nil, StatusNotFound
+		}
+		return nil, StatusInternalError
+	}
+
+	if err := s.db.MarkAsPaid(ctx, lesson.ID); err != nil {
+		return nil, err
+	}
+	lesson.IsPaid = true
+
+	return convertrepoLessonToProto(lesson), nil
+
 }

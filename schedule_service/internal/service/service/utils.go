@@ -10,6 +10,8 @@ import (
 	pb "schedule_service/pkg/api"
 	"time"
 
+	"google.golang.org/grpc/metadata"
+
 	userpb "userservice/pkg/api"
 
 	"google.golang.org/grpc"
@@ -18,6 +20,11 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+type IUserClient interface {
+	Close()
+	GetTutorStudent(ctx context.Context, tutorID, studentID string) (*userpb.TutorStudent, error)
+}
 
 type UserClient struct {
 	conn   *grpc.ClientConn
@@ -140,48 +147,3 @@ func IsTutor(ctx context.Context, userID string) (bool, error) {
 
 	return role == "tutor", nil
 }
-
-// import (
-// 	"errors"
-// 	pb "schedule_service/pkg/api"
-// 	"strings"
-// )
-
-// func filterLessons(lessons []*pb.Lesson, statusFilters []pb.LessonStatusFilter) []*pb.Lesson {
-// 	if len(statusFilters) == 0 {
-// 		return lessons
-// 	}
-
-// 	filterSet := make(map[pb.LessonStatusFilter]struct{})
-// 	for _, f := range statusFilters {
-// 		filterSet[f] = struct{}{}
-// 	}
-
-// 	result := make([]*pb.Lesson, 0, len(lessons))
-// 	for _, lesson := range lessons {
-// 		lessonStatus, err := convertStatusToFilter(lesson.GetStatus())
-// 		if err != nil {
-// 			continue
-// 		}
-
-// 		if _, ok := filterSet[lessonStatus]; ok {
-// 			result = append(result, lesson)
-// 		}
-// 	}
-// 	return result
-
-// }
-
-// func convertStatusToFilter(status string) (pb.LessonStatusFilter, error) {
-// 	switch strings.ToUpper(status) {
-// 	case "BOOKED":
-// 		return pb.LessonStatusFilter_BOOKED, nil
-// 	case "CANCELED":
-// 		return pb.LessonStatusFilter_CANCELLED, nil
-// 	case "COMPLETED":
-// 		return pb.LessonStatusFilter_COMPLETED, nil
-// 	}
-
-// 	return pb.LessonStatusFilter_BOOKED, errors.New("Unknown status")
-
-// }
