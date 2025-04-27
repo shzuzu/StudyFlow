@@ -14,7 +14,7 @@ import (
 	"paymentservice/internal/mocks"
 	"paymentservice/internal/models"
 	"paymentservice/internal/service"
-	"schedule_service/pkg/api"
+	api "schedule_service/pkg/api"
 	"testing"
 	"time"
 )
