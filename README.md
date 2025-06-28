@@ -112,4 +112,20 @@ Authorization: telegram {telegram_id}:{utc_timestamp}:{hmac}
 
 Бизнес-логика всегда использует наиболее приоритетное доступное значение.
 
+## Скрипт для генерации Authorization хедера
+```
+import time
+import hmac
+import hashlib
+
+tg_id = <id>
+bot_token = "secret"
+utc_timestamp = str(int(time.time()))
+message = f"{tg_id}:{utc_timestamp}"
+
+digest = hmac.new(bot_token.encode(), message.encode(), hashlib.sha256).hexdigest()
+header = f"telegram {tg_id}:{utc_timestamp}:{digest}"
+
+print(header)
+```
 
