@@ -44,8 +44,7 @@ func mapErr(err error) int {
 			return http.StatusForbidden
 		case codes.NotFound:
 			return http.StatusNotFound
-		case codes.Unauthenticated:
-			return http.StatusUnauthorized
+
 		}
 	}
 	return http.StatusInternalServerError
