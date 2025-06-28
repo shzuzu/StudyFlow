@@ -112,3 +112,4 @@ Authorization: telegram {telegram_id}:{utc_timestamp}:{hmac}
 
 Бизнес-логика всегда использует наиболее приоритетное доступное значение.
 
+

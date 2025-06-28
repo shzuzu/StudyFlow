@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"google.golang.org/grpc/metadata"
 	"schedule_service/internal/database/repo"
 	pb "schedule_service/pkg/api"
 	"time"
