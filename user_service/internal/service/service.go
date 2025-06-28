@@ -170,7 +170,7 @@ func (s *UserService) authorizeWithTelegram(ctx context.Context, header string) 
 func (s *UserService) GetMe(ctx context.Context) (*model.User, error) {
 	userId, ok := ctxdata.GetUserID(ctx)
 	if !ok {
-		return nil, errdefs.AuthenticationErr
+		return nil, errdefs.ErrNotFound
 	}
 
 	id, err := uuid.Parse(userId)

@@ -77,15 +77,11 @@ func (s *PaymentService) SubmitPaymentReceipt(ctx context.Context, input *models
 		return nil, errdefs.ErrAlreadyExists
 	}
 
-	lesson.IsPaid = true
-	updateLessonRequest := &api3.UpdateLessonRequest{
-		Id:             lesson.Id,
-		ConnectionLink: lesson.ConnectionLink,
-		PriceRub:       lesson.PriceRub,
-		PaymentInfo:    lesson.PaymentInfo,
+	req := &api3.MarkAsPaidRequest{
+		Id: input.LessonId.String(),
 	}
 	lesson, err = retry[*api3.Lesson](ctx, maxRetries, retryDelay, func() (*api3.Lesson, error) {
-		return s.scheduleClient.UpdateLesson(ctxWithMetadata(ctx), updateLessonRequest)
+		return s.scheduleClient.MarkAsPaid(ctxWithMetadata(ctx), req)
 	})
 	if err != nil {
 		return nil, err
@@ -100,9 +96,10 @@ func (s *PaymentService) SubmitPaymentReceipt(ctx context.Context, input *models
 	}
 
 	createReceiptInput := &models.PaymentReceiptCreateInput{
+		ID:         newReceiptID,
 		LessonID:   input.LessonId,
 		FileID:     input.FileId,
-		IsVerified: true,
+		IsVerified: false,
 	}
 	receipt, err := retry(ctx, maxRetries, retryDelay, func() (*models.PaymentReceipt, error) {
 		return s.repo.CreateReceipt(ctxWithMetadata(ctx), createReceiptInput)
@@ -131,13 +128,16 @@ func (s *PaymentService) GetPaymentInfo(ctx context.Context, input *models.GetPa
 	if err != nil {
 		return nil, err
 	}
-	if *lesson.PriceRub == 0 {
-		*lesson.PriceRub = 0
-	}
+
 	paymentInfo := &models.PaymentInfo{
-		LessonID:       input.LessonId,
-		PriceRUB:       *lesson.PriceRub,
-		PaymentDetails: *lesson.PaymentInfo,
+		LessonID: input.LessonId,
+	}
+
+	if lesson.PriceRub != nil {
+		paymentInfo.PriceRUB = *lesson.PriceRub
+	}
+	if lesson.PaymentInfo != nil {
+		paymentInfo.PaymentDetails = *lesson.PaymentInfo
 	}
 	return paymentInfo, nil
 }

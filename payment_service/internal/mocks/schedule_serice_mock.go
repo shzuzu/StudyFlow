@@ -12,7 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
-	api "schedule_service/pkg/api"
+	pkg "schedule_service/pkg/api"
 
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
@@ -43,14 +43,14 @@ func (m *MockScheduleServiceClient) EXPECT() *MockScheduleServiceClientMockRecor
 }
 
 // CancelLesson mocks base method.
-func (m *MockScheduleServiceClient) CancelLesson(ctx context.Context, req *api.CancelLessonRequest, opts ...grpc.CallOption) (*api.Lesson, error) {
+func (m *MockScheduleServiceClient) CancelLesson(ctx context.Context, req *pkg.CancelLessonRequest, opts ...grpc.CallOption) (*pkg.Lesson, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, req}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "CancelLesson", varargs...)
-	ret0, _ := ret[0].(*api.Lesson)
+	ret0, _ := ret[0].(*pkg.Lesson)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -63,14 +63,14 @@ func (mr *MockScheduleServiceClientMockRecorder) CancelLesson(ctx, req any, opts
 }
 
 // CreateLesson mocks base method.
-func (m *MockScheduleServiceClient) CreateLesson(ctx context.Context, req *api.CreateLessonRequest, opts ...grpc.CallOption) (*api.Lesson, error) {
+func (m *MockScheduleServiceClient) CreateLesson(ctx context.Context, req *pkg.CreateLessonRequest, opts ...grpc.CallOption) (*pkg.Lesson, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, req}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "CreateLesson", varargs...)
-	ret0, _ := ret[0].(*api.Lesson)
+	ret0, _ := ret[0].(*pkg.Lesson)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -82,55 +82,15 @@ func (mr *MockScheduleServiceClientMockRecorder) CreateLesson(ctx, req any, opts
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLesson", reflect.TypeOf((*MockScheduleServiceClient)(nil).CreateLesson), varargs...)
 }
 
-// CreateSlot mocks base method.
-func (m *MockScheduleServiceClient) CreateSlot(ctx context.Context, req *api.CreateSlotRequest, opts ...grpc.CallOption) (*api.Slot, error) {
-	m.ctrl.T.Helper()
-	varargs := []any{ctx, req}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "CreateSlot", varargs...)
-	ret0, _ := ret[0].(*api.Slot)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateSlot indicates an expected call of CreateSlot.
-func (mr *MockScheduleServiceClientMockRecorder) CreateSlot(ctx, req any, opts ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, req}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSlot", reflect.TypeOf((*MockScheduleServiceClient)(nil).CreateSlot), varargs...)
-}
-
-// DeleteSlot mocks base method.
-func (m *MockScheduleServiceClient) DeleteSlot(ctx context.Context, req *api.DeleteSlotRequest, opts ...grpc.CallOption) (*api.Empty, error) {
-	m.ctrl.T.Helper()
-	varargs := []any{ctx, req}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "DeleteSlot", varargs...)
-	ret0, _ := ret[0].(*api.Empty)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DeleteSlot indicates an expected call of DeleteSlot.
-func (mr *MockScheduleServiceClientMockRecorder) DeleteSlot(ctx, req any, opts ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, req}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSlot", reflect.TypeOf((*MockScheduleServiceClient)(nil).DeleteSlot), varargs...)
-}
-
 // GetLesson mocks base method.
-func (m *MockScheduleServiceClient) GetLesson(ctx context.Context, req *api.GetLessonRequest, opts ...grpc.CallOption) (*api.Lesson, error) {
+func (m *MockScheduleServiceClient) GetLesson(ctx context.Context, req *pkg.GetLessonRequest, opts ...grpc.CallOption) (*pkg.Lesson, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, req}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetLesson", varargs...)
-	ret0, _ := ret[0].(*api.Lesson)
+	ret0, _ := ret[0].(*pkg.Lesson)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -142,135 +102,35 @@ func (mr *MockScheduleServiceClientMockRecorder) GetLesson(ctx, req any, opts ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLesson", reflect.TypeOf((*MockScheduleServiceClient)(nil).GetLesson), varargs...)
 }
 
-// GetSlot mocks base method.
-func (m *MockScheduleServiceClient) GetSlot(ctx context.Context, req *api.GetSlotRequest, opts ...grpc.CallOption) (*api.Slot, error) {
+// MarkAsPaid mocks base method.
+func (m *MockScheduleServiceClient) MarkAsPaid(ctx context.Context, req *pkg.MarkAsPaidRequest, opts ...grpc.CallOption) (*pkg.Lesson, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, req}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetSlot", varargs...)
-	ret0, _ := ret[0].(*api.Slot)
+	ret := m.ctrl.Call(m, "MarkAsPaid", varargs...)
+	ret0, _ := ret[0].(*pkg.Lesson)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetSlot indicates an expected call of GetSlot.
-func (mr *MockScheduleServiceClientMockRecorder) GetSlot(ctx, req any, opts ...any) *gomock.Call {
+// MarkAsPaid indicates an expected call of MarkAsPaid.
+func (mr *MockScheduleServiceClientMockRecorder) MarkAsPaid(ctx, req any, opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, req}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSlot", reflect.TypeOf((*MockScheduleServiceClient)(nil).GetSlot), varargs...)
-}
-
-// ListCompletedUnpaidLessons mocks base method.
-func (m *MockScheduleServiceClient) ListCompletedUnpaidLessons(ctx context.Context, req *api.ListCompletedUnpaidLessonsRequest, opts ...grpc.CallOption) (*api.ListLessonsResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []any{ctx, req}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ListCompletedUnpaidLessons", varargs...)
-	ret0, _ := ret[0].(*api.ListLessonsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListCompletedUnpaidLessons indicates an expected call of ListCompletedUnpaidLessons.
-func (mr *MockScheduleServiceClientMockRecorder) ListCompletedUnpaidLessons(ctx, req any, opts ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, req}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCompletedUnpaidLessons", reflect.TypeOf((*MockScheduleServiceClient)(nil).ListCompletedUnpaidLessons), varargs...)
-}
-
-// ListLessonsByPair mocks base method.
-func (m *MockScheduleServiceClient) ListLessonsByPair(ctx context.Context, req *api.ListLessonsByPairRequest, opts ...grpc.CallOption) (*api.ListLessonsResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []any{ctx, req}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ListLessonsByPair", varargs...)
-	ret0, _ := ret[0].(*api.ListLessonsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListLessonsByPair indicates an expected call of ListLessonsByPair.
-func (mr *MockScheduleServiceClientMockRecorder) ListLessonsByPair(ctx, req any, opts ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, req}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLessonsByPair", reflect.TypeOf((*MockScheduleServiceClient)(nil).ListLessonsByPair), varargs...)
-}
-
-// ListLessonsByStudent mocks base method.
-func (m *MockScheduleServiceClient) ListLessonsByStudent(ctx context.Context, req *api.ListLessonsByStudentRequest, opts ...grpc.CallOption) (*api.ListLessonsResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []any{ctx, req}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ListLessonsByStudent", varargs...)
-	ret0, _ := ret[0].(*api.ListLessonsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListLessonsByStudent indicates an expected call of ListLessonsByStudent.
-func (mr *MockScheduleServiceClientMockRecorder) ListLessonsByStudent(ctx, req any, opts ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, req}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLessonsByStudent", reflect.TypeOf((*MockScheduleServiceClient)(nil).ListLessonsByStudent), varargs...)
-}
-
-// ListLessonsByTutor mocks base method.
-func (m *MockScheduleServiceClient) ListLessonsByTutor(ctx context.Context, req *api.ListLessonsByTutorRequest, opts ...grpc.CallOption) (*api.ListLessonsResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []any{ctx, req}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ListLessonsByTutor", varargs...)
-	ret0, _ := ret[0].(*api.ListLessonsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListLessonsByTutor indicates an expected call of ListLessonsByTutor.
-func (mr *MockScheduleServiceClientMockRecorder) ListLessonsByTutor(ctx, req any, opts ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, req}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLessonsByTutor", reflect.TypeOf((*MockScheduleServiceClient)(nil).ListLessonsByTutor), varargs...)
-}
-
-// ListSlotsByTutor mocks base method.
-func (m *MockScheduleServiceClient) ListSlotsByTutor(ctx context.Context, req *api.ListSlotsByTutorRequest, opts ...grpc.CallOption) (*api.ListSlotsResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []any{ctx, req}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ListSlotsByTutor", varargs...)
-	ret0, _ := ret[0].(*api.ListSlotsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListSlotsByTutor indicates an expected call of ListSlotsByTutor.
-func (mr *MockScheduleServiceClientMockRecorder) ListSlotsByTutor(ctx, req any, opts ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, req}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSlotsByTutor", reflect.TypeOf((*MockScheduleServiceClient)(nil).ListSlotsByTutor), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsPaid", reflect.TypeOf((*MockScheduleServiceClient)(nil).MarkAsPaid), varargs...)
 }
 
 // UpdateLesson mocks base method.
-func (m *MockScheduleServiceClient) UpdateLesson(ctx context.Context, req *api.UpdateLessonRequest, opts ...grpc.CallOption) (*api.Lesson, error) {
+func (m *MockScheduleServiceClient) UpdateLesson(ctx context.Context, req *pkg.UpdateLessonRequest, opts ...grpc.CallOption) (*pkg.Lesson, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, req}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "UpdateLesson", varargs...)
-	ret0, _ := ret[0].(*api.Lesson)
+	ret0, _ := ret[0].(*pkg.Lesson)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -280,24 +140,4 @@ func (mr *MockScheduleServiceClientMockRecorder) UpdateLesson(ctx, req any, opts
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, req}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLesson", reflect.TypeOf((*MockScheduleServiceClient)(nil).UpdateLesson), varargs...)
-}
-
-// UpdateSlot mocks base method.
-func (m *MockScheduleServiceClient) UpdateSlot(ctx context.Context, req *api.UpdateSlotRequest, opts ...grpc.CallOption) (*api.Slot, error) {
-	m.ctrl.T.Helper()
-	varargs := []any{ctx, req}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "UpdateSlot", varargs...)
-	ret0, _ := ret[0].(*api.Slot)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpdateSlot indicates an expected call of UpdateSlot.
-func (mr *MockScheduleServiceClientMockRecorder) UpdateSlot(ctx, req any, opts ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, req}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSlot", reflect.TypeOf((*MockScheduleServiceClient)(nil).UpdateSlot), varargs...)
 }
